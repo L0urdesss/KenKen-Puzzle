@@ -1,0 +1,17 @@
+Color Palette 
+
+#6C0345 
+#DC6B19 
+#F7C566 
+#FFF8DC  
+#6C0329_Maroon
+
+Radius 
+ 
+-Start Button: 20 rad 
+-others: 10rad 
+
+Font 
+-Nerko One 
+ 
+
