@@ -2,6 +2,7 @@ import pygame
 import sys
 from button import Button
 import os
+import time
 
 pygame.init()
 
@@ -190,7 +191,7 @@ def select_operations(grid_size):
 def select_difficulty(grid_size, operation):
     selecting = True
     while selecting:
-        screen.fill(WHITE)
+        screen.fill(WHITE)  # Clear the screen
         SELECT_MOUSE_POS = pygame.mouse.get_pos()
         background_image = pygame.image.load(os.path.join("resources", "GAME BG.png")).convert_alpha()
         screen.blit(background_image, (0, 0))  # Blit the background image onto the screen
@@ -227,16 +228,113 @@ def select_difficulty(grid_size, operation):
 
         pygame.display.update()
 
+
 def start_game(grid_size, operation, difficulty):
-    screen.blit(game_bg_image, (0, 0))
-    pygame.display.update()
+    # Generate the game board based on the selected grid size
+    game_board = generate_board(grid_size)
+
+    # Calculate the size and position of the grid on the screen
+    cell_size = 80  # Adjust this value based on your screen size and grid size
+    grid_width = cell_size * grid_size
+    grid_height = cell_size * grid_size
+    grid_x = (screen_width - grid_width) // 2
+    grid_y = (screen_height - grid_height) // 2
+
+    # Define number buttons
+    button_size = 40
+    button_spacing = 10
+    num_buttons = []
+    for i in range(1, grid_size + 1):
+        button_x = grid_x + i * (button_size + button_spacing)
+        button_y = grid_y + grid_height + button_spacing
+        num_buttons.append(Button(image=None, pos=(button_x, button_y), text_input=str(i),
+                                  font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
+
+    # Initialize selected cell
+    selected_cell = None
+
+    # Initialize timer variables
+    start_time = time.time()
+    elapsed_time = 0
 
     # Placeholder loop to keep the window open
     while True:
+        screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
+
+        # Render the game board on the screen
+        for i in range(grid_size):
+            for j in range(grid_size):
+                cell_x = grid_x + j * cell_size
+                cell_y = grid_y + i * cell_size
+                cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
+
+                # Render cell background color
+                cell_color = (255, 255, 255)  # Default color (white)
+                if selected_cell and (j, i) == selected_cell:
+                    cell_color = (0, 255, 0)  # Selected color (green)
+                pygame.draw.rect(screen, cell_color, cell_rect)
+
+                # Render cell border
+                pygame.draw.rect(screen, (0, 0, 0), cell_rect, 2)
+
+                # Render cell value
+                cell_value = game_board[i][j]
+                if cell_value != 0:
+                    font = pygame.font.SysFont(None, 36)
+                    text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
+                    text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
+                    screen.blit(text, text_rect)
+
+        # Render number buttons
+        for button in num_buttons:
+            button.changeColor(pygame.mouse.get_pos())
+            button.update(screen)
+
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
+
+        # Render timer text
+        font = pygame.font.SysFont(None, 36)
+        timer_text = font.render(f" {minutes:02}:{seconds:02}", True, (255, 255, 255))
+        screen.blit(timer_text, (10, 10))
+
+        pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                # Check if the click is within the grid boundaries
+                if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
+                    # Calculate the cell index based on the mouse position
+                    cell_x = (mouse_x - grid_x) // cell_size
+                    cell_y = (mouse_y - grid_y) // cell_size
+                    selected_cell = (cell_x, cell_y)
+                else:
+                    # Check if any number button is clicked
+                    for i, button in enumerate(num_buttons):
+                        if button.checkForInput((mouse_x, mouse_y)):
+                            if selected_cell:
+                                # Update the value of the selected cell with the clicked number
+                                game_board[selected_cell[1]][selected_cell[0]] = i + 1
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
+                    if selected_cell:
+                        # Clear the value of the selected cell
+                        game_board[selected_cell[1]][selected_cell[0]] = 0
+
+
+def generate_board(grid_size):
+    # Generate a grid_size x grid_size game board
+    board = [[0] * grid_size for _ in range(grid_size)]
+    # You can customize the board generation logic here
+
+    return board
+
 
 def controls():
     controls_bg = pygame.image.load("resources/CONTROLS.png")
