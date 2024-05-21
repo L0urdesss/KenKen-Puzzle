@@ -4,6 +4,7 @@ import time
 
 import pygame
 from moviepy.editor import VideoFileClip
+from backend import KenPuzzleMaker
 
 from button import Button
 
@@ -453,9 +454,29 @@ def solve_game(game_board):
 
 def generate_board(grid_size):
     # Generate a grid_size x grid_size game board
-    board = [[0] * grid_size for _ in range(grid_size)]
+    # Create an instance of KenPuzzleMaker
+    if(grid_size == 3):
+        subgrid = 1
+    else:
+        subgrid = 2
+    print("sizes")
+    print(grid_size)
+    print(subgrid)
+
+    ken_solver = KenPuzzleMaker(grid_size)
+    
+    # Generate the Sudoku board
+    ken_solver.generate_answer_board(grid_size,subgrid)
+
+    # Access the board, random, and groups values
+    board = ken_solver.board
+    # random_instance = ken_solver.random
+    # groups = ken_solver.groups
+
+    # board = [[0] * grid_size for _ in range(grid_size)]
     # You can customize the board generation logic here
 
+    print(board)
     return board
 
 
@@ -526,5 +547,5 @@ def controls():
         pygame.display.flip()
 
 
-play_intro_video()
+# play_intro_video()
 main()
