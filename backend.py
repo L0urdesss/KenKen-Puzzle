@@ -1,6 +1,7 @@
 import random
 
 
+
 class KenPuzzleMaker:
     def __init__(self,board_size):
         self.board = [[0] * board_size for _ in range(board_size)]
@@ -221,11 +222,13 @@ class KenPuzzleMaker:
     def get_board_value(self, x, y):
         return self.board[x][y]
     
-# if __name__ == "__main__":
-#     solver = KenPuzzleMaker(board_size)
-#     solver.generate_answer_board(board_size,subgrid)
-#     getgroups = solver.getAllGroups()
-#     print("each group: ",solver.groupwithval)
-#     print("all groups: ",getgroups)
+if __name__ == "__main__":
+    solver = KenPuzzleMaker(3)
+    solver.updateOp("+-")
+    getgroups = solver.getAllGroups()
+    solver.generate_answer_board(3,1)
+
+    print("each group: ",solver.groupwithval)
+    print("all groups: ",getgroups)
 
 
