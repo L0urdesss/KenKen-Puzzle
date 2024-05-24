@@ -39,6 +39,7 @@ solve_img = pygame.image.load('resources/solve.png')
 undo_img = pygame.image.load('resources/undo.png')
 reset_img = pygame.image.load('resources/reset.png')
 erase_img = pygame.image.load('resources/eraser.png')
+back_img = pygame.image.load('resources/back.png')
 
 
 # Scale the 3x3 image
@@ -52,6 +53,7 @@ plus_minus_multiply_image = pygame.transform.scale(plus_minus_multiply_image, (1
 random_image = pygame.transform.scale(random_image, (150, 150))
 new_game_img = pygame.transform.scale(new_game_img, (180, 90))
 solve_img = pygame.transform.scale(solve_img, (180, 90))
+back_img = pygame.transform.scale(back_img, (50, 50))
 undo_img = pygame.transform.scale(undo_img, (90, 90))
 reset_img = pygame.transform.scale(reset_img, (90, 90))
 erase_img = pygame.transform.scale(erase_img, (90, 90))
@@ -303,9 +305,12 @@ def start_game(grid_size, operation, difficulty):
     ERASE_BUTTON = Button(image=erase_img,
                           pos=(button_x + 2 * button_x_spacing - 290, button_y_start +1  * button_y_start - 10),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    BACK_BUTTON = Button(image=back_img,
+                         pos=(40, 30),  # Adjust the values as needed for exact positioning
+                         text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
     # Combine all buttons into a list
-    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON]
+    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON]
 
 
     # Calculate y position for the number buttons, starting below the last control button
@@ -466,6 +471,8 @@ def start_game(grid_size, operation, difficulty):
                             game_board[selected_cell[1]][selected_cell[0]] = previous_value
                     if RESET_BUTTON.checkForInput((mouse_x, mouse_y)):
                         game_board = [row[:] for row in initial_board]  # Reset to the initial state
+                    if BACK_BUTTON.rect.collidepoint(event.pos):
+                        main()
                     if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if selected_cell:
                             previous_value = game_board[selected_cell[1]][selected_cell[0]]
@@ -536,12 +543,14 @@ def main():
         MENU_MOUSE_POS = pygame.mouse.get_pos()
         PLAY_BUTTON = Button(image=None, pos=(960, 350),
                              text_input="PLAY GAME", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        CONTROLS_BUTTON = Button(image=None, pos=(960, 450),
+        SOLVER_BUTTON = Button(image=None, pos=(960, 430),
+                               text_input="SOLVER", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        CONTROLS_BUTTON = Button(image=None, pos=(960, 510),
                                  text_input="CONTROLS", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        QUIT_BUTTON = Button(image=None, pos=(960, 550),
+        QUIT_BUTTON = Button(image=None, pos=(960, 590),
                              text_input="QUIT GAME", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-        for button in [PLAY_BUTTON, CONTROLS_BUTTON, QUIT_BUTTON]:
+        for button in [PLAY_BUTTON, SOLVER_BUTTON, CONTROLS_BUTTON, QUIT_BUTTON]:
             button.changeColor(MENU_MOUSE_POS)
             button.update(screen)
 
@@ -552,6 +561,13 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
                     select_grid_size()
+                    select_operations()
+                    select_difficulty()
+                    start_game()
+                    pass
+                if SOLVER_BUTTON.checkForInput(MENU_MOUSE_POS):
+                   select_grid_size()
+                solve_puzzle()  # Solve the puzzle directly
                 if CONTROLS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     controls()
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
@@ -559,8 +575,8 @@ def main():
                     sys.exit()
 
         pygame.display.update()
-
-
+def solve_puzzle():
+        pygame.display.flip()
 def controls():
     # Controls screen code
     controls_bg = pygame.image.load("resources/CONTROLS.png")
@@ -586,5 +602,5 @@ def controls():
         pygame.display.flip()
 
 
-# play_intro_video()
+#play_intro_video()
 main()
