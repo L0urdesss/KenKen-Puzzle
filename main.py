@@ -104,6 +104,7 @@ def get_font(size, type):
 
 
 
+
 def select_grid_size(play):
     selecting = True
     while selecting:
@@ -534,13 +535,13 @@ def start_game(grid_size, operation, difficulty):
                 cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
 
                 # Render cell background color
-                cell_color = (255, 255, 255)  # Default color (white)
+                cell_color = (255,248,220)  # Default color (white)
                 if selected_cell and (j, i) == selected_cell:
-                    cell_color = (0, 255, 0)  # Selected color (green)
+                    cell_color = (247, 197, 102)  # Selected color (green)
                 pygame.draw.rect(screen, cell_color, cell_rect)
 
                 # Render cell border
-                pygame.draw.rect(screen, (0, 0, 0), cell_rect, 2)
+                pygame.draw.rect(screen, (0,0,0), cell_rect, 2)
 
                 # Render cell value
                 cell_value = game_board[i][j]
@@ -554,11 +555,11 @@ def start_game(grid_size, operation, difficulty):
             for i, j in group[:-2]:
                 # Draw horizontal line
                 if i < grid_size - 1 and (i + 1, j) in group:
-                    pygame.draw.line(screen, (255, 255, 255), ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
+                    pygame.draw.line(screen, (0,0,0), ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
                                     ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
                 # Draw vertical line
                 if j < grid_size - 1 and (i, j + 1) in group:
-                    pygame.draw.line(screen, (255, 255, 255), ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
+                    pygame.draw.line(screen, (0,0,0), ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
                                     ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
 
             first_cell = group[0]
@@ -575,12 +576,6 @@ def start_game(grid_size, operation, difficulty):
                 )
 
                 screen.blit(text_surface, text_rect)
-
-                line_length = 3
-                pygame.draw.line(screen, (0, 0, 0), (text_rect.right + 3, text_rect.top - 1),
-                                    (text_rect.right + 3, text_rect.bottom + line_length), 3)
-                pygame.draw.line(screen, (0, 0, 0), (text_rect.left - 1, text_rect.bottom + 2),
-                                    (text_rect.right + line_length, text_rect.bottom + 2), 3)
 
         # Render control buttons
         for button in control_buttons:
