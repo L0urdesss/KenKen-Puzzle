@@ -107,7 +107,7 @@ class KenPuzzleMaker:
     def getGroupVal(self,group,ops):
         if not group:
             return 0, ""
-        possible_ops = ["+", "+-", "x/", "+-x/"]
+        possible_ops = ["+", "+-", "*/", "+-*/"]
         print("ops: ",ops)
         board_values_array = self.add_1_plus_to_list(group)
         board_values_array.sort(key=lambda x: x[2], reverse=True)
