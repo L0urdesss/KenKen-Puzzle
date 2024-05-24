@@ -1,7 +1,5 @@
 import random
 
-board_size = 6
-subgrid = 2
 
 class KenPuzzleMaker:
     def __init__(self,board_size):
@@ -15,10 +13,10 @@ class KenPuzzleMaker:
     def generate_answer_board(self,board_size , subgrid):
         self.initialize_board(board_size)
         self.fill_board(0, 0 ,subgrid ,board_size)
-        self.group_cells()
+        self.group_cells(board_size,subgrid)
         self.getEachGroups()
         self.print_board()
-        self.print_board_coord()
+        self.print_board_coord(board_size)
         self.print_group_cells()
 
     def initialize_board(self,board_size):
@@ -62,7 +60,7 @@ class KenPuzzleMaker:
                     return False
         return True
 
-    def group_cells(self):
+    def group_cells(self,board_size,subgrid):
         group_number = 1
         for i in range(board_size):
             for j in range(board_size):
@@ -98,7 +96,7 @@ class KenPuzzleMaker:
         for row in self.board:
             print(' '.join(map(str, row)))
 
-    def print_board_coord(self):
+    def print_board_coord(self,board_size):
         for i in range(board_size):
             for j in range(board_size):
                 print(f'({i},{j})', end=' ')
