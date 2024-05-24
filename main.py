@@ -16,6 +16,7 @@ H_RED = pygame.Color("#FFAAAC")
 BLUE = pygame.Color("#3E5AAA")
 H_BLUE = pygame.Color("#6477AF")
 WHITE = pygame.Color("#FFFFFF")
+BLACK = pygame.Color("#000000")
 
 # Screen dimensions
 screen_width = 1280
@@ -201,9 +202,9 @@ def select_operations(grid_size):
                 if PLUS_MINUS_BUTTON.checkForInput(SELECT_MOUSE_POS):
                     select_difficulty(grid_size, "+-")
                 if MULTIPLY_DIVIDE_BUTTON.checkForInput(SELECT_MOUSE_POS):
-                    select_difficulty(grid_size, "x/")
+                    select_difficulty(grid_size, "*/")
                 if PLUS_MINUS_MULTIPLY_BUTTON.checkForInput(SELECT_MOUSE_POS):
-                    select_difficulty(grid_size, "+-x/")
+                    select_difficulty(grid_size, "+-*/")
                 if RANDOM_BUTTON.checkForInput(SELECT_MOUSE_POS):
                     select_difficulty(grid_size, "?")
                 if BACK_BUTTON.checkForInput(SELECT_MOUSE_POS):
@@ -258,7 +259,7 @@ def start_game(grid_size, operation, difficulty):
     screen_width, screen_height = screen.get_size()
 
     # Generate the game board based on the selected grid size
-    game_board = generate_board(grid_size)
+    game_board,groups = generate_board(grid_size,operation)
     # Store the initial state for the reset functionality
     initial_board = [row[:] for row in game_board]
 
@@ -347,7 +348,7 @@ def start_game(grid_size, operation, difficulty):
     start_time = time.time()
     elapsed_time = 0
 
-    # Placeholder loop to keep the window open
+    # Placeholder loop to keep the screen open
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
 
@@ -374,6 +375,38 @@ def start_game(grid_size, operation, difficulty):
                     text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
                     text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
                     screen.blit(text, text_rect)
+
+        for group in groups:
+            for i, j in group[:-2]:
+                # Draw horizontal line
+                if i < grid_size - 1 and (i + 1, j) in group:
+                    pygame.draw.line(screen, (255, 255, 255), ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
+                                    ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
+                # Draw vertical line
+                if j < grid_size - 1 and (i, j + 1) in group:
+                    pygame.draw.line(screen, (255, 255, 255), ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
+                                    ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
+
+            first_cell = group[0]
+            if not isinstance(group[-1], tuple):
+                sum_value = group[-1]
+                text_op = group[-2]
+                sum_text = str(sum_value)
+                combined_text = sum_text + text_op
+                font = pygame.font.Font(None, 36)
+                text_surface = font.render(combined_text, True, (0, 0, 0))
+
+                text_rect = text_surface.get_rect(
+                    topleft=(grid_x + first_cell[1] * cell_size + 2, grid_y + first_cell[0] * cell_size + 2)
+                )
+
+                screen.blit(text_surface, text_rect)
+
+                line_length = 3
+                pygame.draw.line(screen, (0, 0, 0), (text_rect.right + 3, text_rect.top - 1),
+                                    (text_rect.right + 3, text_rect.bottom + line_length), 3)
+                pygame.draw.line(screen, (0, 0, 0), (text_rect.left - 1, text_rect.bottom + 2),
+                                    (text_rect.right + line_length, text_rect.bottom + 2), 3)
 
         # Render control buttons
         for button in control_buttons:
@@ -452,7 +485,7 @@ def solve_game(game_board):
     pass
 
 
-def generate_board(grid_size):
+def generate_board(grid_size,operation):
     # Generate a grid_size x grid_size game board
     # Create an instance of KenPuzzleMaker
     if(grid_size == 3):
@@ -464,12 +497,18 @@ def generate_board(grid_size):
     print(subgrid)
 
     ken_solver = KenPuzzleMaker(grid_size)
-    
+    print("operation: ",operation)
     # Generate the Sudoku board
+    ken_solver.updateOp(operation)
+
     ken_solver.generate_answer_board(grid_size,subgrid)
+    updated_op = ken_solver.op
+    print("updated op: ",updated_op)
 
     # Access the board, random, and groups values
     board = ken_solver.board
+    updated_groups = ken_solver.getAllGroups()
+    print(updated_groups)
     # random_instance = ken_solver.random
     # groups = ken_solver.groups
 
@@ -477,7 +516,7 @@ def generate_board(grid_size):
     # You can customize the board generation logic here
 
     print(board)
-    return board
+    return board,updated_groups
 
 
 def main():

@@ -1,21 +1,25 @@
 import random
 
-board_size = 3
-subgrid = 1
+board_size = 6
+subgrid = 2
 
 class KenPuzzleMaker:
     def __init__(self,board_size):
         self.board = [[0] * board_size for _ in range(board_size)]
         self.random = random.Random()
         self.groups = {}
+        self.groupwithnumber = []
+        self.groupwithval = []
+        self.op = None
 
     def generate_answer_board(self,board_size , subgrid):
         self.initialize_board(board_size)
         self.fill_board(0, 0 ,subgrid ,board_size)
         self.group_cells()
+        self.getEachGroups()
         self.print_board()
-        self.print_groups()
         self.print_board_coord()
+        self.print_group_cells()
 
     def initialize_board(self,board_size):
         self.board = [[0] * board_size for _ in range(board_size)]
@@ -81,18 +85,14 @@ class KenPuzzleMaker:
                         break
                 if len(self.groups[group_number]) >= group_size:
                     group_number += 1
-        if group_number in self.groups and len(self.groups[group_number]) != 0:
-            group_number += 1
+            if group_number in self.groups and len(self.groups[group_number]) != 0:
+                group_number += 1
 
     def is_coordinate_in_any_group(self, coordinate):
         for group in self.groups.values():
             if coordinate in group:
                 return True
         return False
-
-    def get_board_value(self, x, y):
-        print(x, " and " , y)
-        return self.board[x][y]
 
     def print_board(self):
         for row in self.board:
@@ -103,54 +103,131 @@ class KenPuzzleMaker:
             for j in range(board_size):
                 print(f'({i},{j})', end=' ')
             print()
+    
+    def getGroupVal(self,group,ops):
+        if not group:
+            return 0, ""
+        possible_ops = ["+", "+-", "x/", "+-x/"]
+        print("ops: ",ops)
+        board_values_array = self.add_1_plus_to_list(group)
+        board_values_array.sort(key=lambda x: x[2], reverse=True)
+        total = sum(cell[2] for cell in board_values_array)
+        difference = board_values_array[0][2] - sum(cell[2] for cell in board_values_array[1:])
+        numerator = board_values_array[0][2]
+        denominator = sum(cell[2] for cell in board_values_array[1:])
+        if denominator != 0:
+            quotient = numerator / denominator
+        else:
+            quotient = float('inf')  
+        product = 1
+        for cell in board_values_array:
+            product *= cell[2]
 
+        operation = ""
+
+        if ops == "?":
+            ops = random.choice(possible_ops)
+        
+        if '/' in ops and not (len(group) == 2 and quotient.is_integer()):
+            ops = ops.replace('/', '')
+
+        # Remove '-' if the difference condition is not met
+        print("difference: ",difference)
+        print("before: ",ops)
+        if '-' in ops and difference < 0:
+            print("got it")
+            ops = ops.replace('-', '')
+        print("after: ",ops )
+        # Randomly select an operation from the remaining ops string
+        random_operation = ops[self.random.randint(0, len(ops) - 1)]
+        print("random_op: ",random_operation)
+            
+        if random_operation == "+":
+            total = sum(cell[2] for cell in board_values_array)
+            operation = "+"
+        elif random_operation == "*":
+            total = product
+            operation = "*"
+        elif random_operation == "-":
+            total = difference
+            operation = "-"
+        elif random_operation == "/":
+            total = int(quotient)
+            operation = "/"
+
+        if len(group) == 1:
+            total = board_values_array[0][2]
+            operation = " "
+        # print("in grouping")
+        # print(group)
+        # print(total)
+        # print(operation)
+        return total, operation        
+
+    def updateOp(self,operation):
+        print("op inside: ",operation)
+        self.op = operation
+        print("updated op inside: ",self.op)
+
+    def getEachGroups(self):
+        self.groupwithval.clear()  # Clear the existing values
+        for group_number, group in self.groups.items():
+            if not group:
+                continue
+
+            print("selfop: ",self.op)
+            total, operation = self.getGroupVal(group,self.op)
+
+            board_values_array = self.add_1_plus_to_list(group)
+            board_values_array.sort(key=lambda x: x[2], reverse=True)
+            for cell in board_values_array:
+                self.groupwithval.append([(cell[0], cell[1]), cell[2], operation, total])
+
+    def print_group_cells(self):
+        for group_number, cells in self.groups.items():
+            if not cells:
+                continue
+            print(f"Group {group_number}:")
+            group_output = self.groupwithval
+            for cell_data in group_output:
+                if (cell_data[0][0], cell_data[0][1]) in cells:
+                    print(f"{cell_data[0]}, {cell_data[1]}, {cell_data[2]}, {cell_data[3]}")
+
+    def getAllGroups(self):
+        output = []
+        for group_number, cells in self.groups.items():
+            if not cells:
+                continue
+            group = []
+            total = 0
+            op = ""
+            group_output = self.groupwithval
+            for cell_data in group_output:
+                if (cell_data[0][0], cell_data[0][1]) in cells:
+                    group.append((cell_data[0]))
+                    op = cell_data[2]
+                    total = cell_data[3]
+            group.sort()  
+            group.append(op)
+            group.append(total) 
+            output.append(group)
+        return output
+    
     def add_1_plus_to_list(self, cells):
         board_values_array = []
-        print("cells: ",cells)
         for cell in cells:
             num = self.get_board_value(*cell)
             board_values_array.append((*cell, num, 1, "+"))
         return board_values_array
 
-    def print_groups(self):
-        for group_number, group in self.groups.items():
-            if not group:
-                continue
-            print(f"Group {group_number}:")
-            board_values_array = self.add_1_plus_to_list(group)
-            board_values_array.sort(key=lambda x: x[2], reverse=True)
-            total = sum(cell[2] for cell in board_values_array)
-            difference = board_values_array[0][2] - sum(cell[2] for cell in board_values_array[1:])
-            quotient = total / len(board_values_array)
-            product = 1
-            for cell in board_values_array:
-                product *= cell[2]
-            operation = ""
-            if len(group) == 2 and quotient.is_integer():
-                random_operation = self.random.randint(0, 3)
-            elif difference < 0:
-                random_operation = self.random.randint(0, 1)
-            else:
-                random_operation = self.random.randint(0, 2)
-            if random_operation == 0:
-                operation = "+"
-                total = sum(cell[2] for cell in board_values_array)
-            elif random_operation == 1:
-                operation = "*"
-                total = product
-            elif random_operation == 2:
-                operation = "-"
-                total = difference
-            elif random_operation == 3:
-                operation = "/"
-                total = int(quotient)
-            if len(group) == 1:
-                operation = " "
-                total = 0
-            for cell in board_values_array:
-                print(f"Cell ({cell[0]}, {cell[1]}) {cell[2]} {operation} {total}")
-            print()
+    def get_board_value(self, x, y):
+        return self.board[x][y]
+    
+# if __name__ == "__main__":
+#     solver = KenPuzzleMaker(board_size)
+#     solver.generate_answer_board(board_size,subgrid)
+#     getgroups = solver.getAllGroups()
+#     print("each group: ",solver.groupwithval)
+#     print("all groups: ",getgroups)
 
-if __name__ == "__main__":
-    solver = KenPuzzleMaker(board_size)
-    solver.generate_answer_board(3,1)
+
