@@ -265,6 +265,72 @@ def select_difficulty(grid_size, operation):
         pygame.display.update()
 
 
+def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , groups):
+    for i in range(grid_size):
+        for j in range(grid_size):
+            cell_x = grid_x + i * cell_size
+            cell_y = grid_y + j * cell_size
+            cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
+            cell_color = (255, 255, 255)  # Default color (white)
+
+            if selected_group:
+                for coordinate in selected_group:
+                    y, x = coordinate 
+                    if (i, j) == (x, y):
+                        cell_color = (0, 255, 0) 
+
+            if target_group:
+                for coordinate in target_group:
+                    y, x = coordinate 
+                    if (i, j) == (x, y):
+                        cell_color = (255, 0, 0)  
+
+
+            pygame.draw.rect(screen, cell_color, cell_rect)
+            pygame.draw.rect(screen, (0, 0, 0), cell_rect, 2)
+            cell_value = game_board[i][j]
+
+            if cell_value != 0:
+                font = pygame.font.SysFont(None, 36)
+                text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
+                text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
+                screen.blit(text, text_rect)
+
+    if groups:
+        for group in groups:
+            for i, j in group:
+                if not isinstance(i, int) or not isinstance(j, int):
+                    continue 
+                color = (255,255,255)
+                if group == selected_group:
+                    color = (0, 255, 0)
+
+                # Draw horizontal line
+                if i < grid_size - 1 and (i + 1, j) in group:
+                    pygame.draw.line(screen, color, ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
+                                    ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
+                # Draw vertical line
+                if j < grid_size - 1 and (i, j + 1) in group:
+                    pygame.draw.line(screen, color, ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
+                                    ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
+
+        
+            first_cell = group[0]
+            if not isinstance(group[-1], tuple):
+                sum_value = group[-1]
+                text_op = group[-2]
+                sum_text = str(sum_value)
+                combined_text = sum_text + text_op
+                font = pygame.font.Font(None, 36)
+                text_surface = font.render(combined_text, True, (0, 0, 0))
+
+                text_rect = text_surface.get_rect(
+                    topleft=(grid_x + first_cell[1] * cell_size + 2, grid_y + first_cell[0] * cell_size + 2)
+                )
+
+                screen.blit(text_surface, text_rect)
+    
+
 def start_solver(grid_size):
     pygame.init()
     screen = pygame.display.set_mode((1280, 720))
@@ -337,31 +403,25 @@ def start_solver(grid_size):
                                         font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
 
     move_history = []
-    selected_cell = None
+    selected_group = None
+    target_group = []
     start_time = time.time()
     elapsed_time = 0
 
+    ken_solver = KenPuzzleMaker(grid_size)
+    ken_solver.generate_empty_board()
+
+    def init():
+        nonlocal move_history, selected_group, start_time, elapsed_time, target_group 
+        move_history = []
+        selected_group = None
+        start_time = time.time()
+        elapsed_time = 0
+        target_group = None
+
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
-        for i in range(grid_size):
-            for j in range(grid_size):
-                cell_x = grid_x + j * cell_size
-                cell_y = grid_y + i * cell_size
-                cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
-                cell_color = (255, 255, 255)  # Default color (white)
-
-                if selected_cell and (j, i) == selected_cell:
-                    cell_color = (0, 255, 0)  # Selected color (green)
-
-                pygame.draw.rect(screen, cell_color, cell_rect)
-                pygame.draw.rect(screen, (0, 0, 0), cell_rect, 2)
-                cell_value = game_board[i][j]
-
-                if cell_value != 0:
-                    font = pygame.font.SysFont(None, 36)
-                    text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
-                    text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
-                    screen.blit(text, text_rect)
+        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , ken_solver.solver_group)
 
         for button in control_buttons:
             button.changeColor(pygame.mouse.get_pos())
@@ -386,44 +446,117 @@ def start_solver(grid_size):
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if event.button == 1: # Left click
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
 
-                if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
-                    cell_x = (mouse_x - grid_x) // cell_size
-                    cell_y = (mouse_y - grid_y) // cell_size
-                    selected_cell = (cell_x, cell_y)
-                else:
-                    for i, button in enumerate(num_buttons):
-                        if button.checkForInput((mouse_x, mouse_y)):
-                            if selected_cell:
-                                previous_value = game_board[selected_cell[1]][selected_cell[0]]
-                                move_history.append((selected_cell, previous_value))
-                                game_board[selected_cell[1]][selected_cell[0]] = i + 1
-                    if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        start_solver(grid_size)  # Restart the game
-                    if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        solve_game(game_board)  # Placeholder for the solve functionality
-                    if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        if move_history:
-                            last_move = move_history.pop()
-                            selected_cell, previous_value = last_move
-                            game_board[selected_cell[1]][selected_cell[0]] = previous_value
-                    if RESET_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        game_board =  [[0] * grid_size for _ in range(grid_size)]  # Reset to the initial state
-                    if BACK_BUTTON.rect.collidepoint(event.pos):
-                        main()
-                    if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        if selected_cell:
-                            previous_value = game_board[selected_cell[1]][selected_cell[0]]
-                            move_history.append((selected_cell, previous_value))
-                            game_board[selected_cell[1]][selected_cell[0]] = 0
+                    if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
+                        cell_x = (mouse_x - grid_x) // cell_size
+                        cell_y = (mouse_y - grid_y) // cell_size
+                        selected_cell = (cell_y, cell_x)
+                        print("selected cell: ",selected_cell)
+                        selected_group = ken_solver.find_group(selected_cell)
+                        print("Selected group: ",selected_group)
+                    else:
+                        for i, button in enumerate(num_buttons):
+                            if button.checkForInput((mouse_x, mouse_y)):
+                                if selected_group:
+                                    previous_value = game_board[selected_group[1]][selected_group[0]]
+                                    move_history.append((selected_group, previous_value))
+                                    game_board[selected_group[1]][selected_group[0]] = i + 1
+                        if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            start_solver(grid_size)  # Restart the game
+                            init()
+
+                        if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            solve_game(game_board)  # Placeholder for the solve functionality
+                        if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            if move_history:
+                                last_move = move_history.pop()
+                                selected_group, previous_value = last_move
+                                game_board[selected_group[1]][selected_group[0]] = previous_value
+                        if RESET_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            game_board =  [[0] * grid_size for _ in range(grid_size)]  # Reset to the initial state
+                        if BACK_BUTTON.rect.collidepoint(event.pos):
+                            main()
+                        if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            if selected_group:
+                                previous_value = game_board[selected_group[1]][selected_group[0]]
+                                move_history.append((selected_group, previous_value))
+                                game_board[selected_group[1]][selected_group[0]] = 0
+                elif event.button == 3:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                    if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
+                        cell_x = (mouse_x - grid_x) // cell_size
+                        cell_y = (mouse_y - grid_y) // cell_size
+                        selected_cell = (cell_y, cell_x)
+
+                        if selected_cell in target_group:
+                            target_group.remove(selected_cell)
+                        else:
+                            target_group.append(selected_cell)       
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
-                    if selected_cell:
-                        previous_value = game_board[selected_cell[1]][selected_cell[0]]
-                        move_history.append((selected_cell, previous_value))
-                        game_board[selected_cell[1]][selected_cell[0]] = 0
+                    if selected_group:
+                        previous_value = game_board[selected_group[1]][selected_group[0]]
+                        move_history.append((selected_group, previous_value))
+                        game_board[selected_group[1]][selected_group[0]] = 0
+                if event.key == pygame.K_RETURN:
+                    if target_group:
+                        ken_solver.add_group(target_group)
+                        print("SAVED")
+                        target_group = []
+
+
+def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups):
+    for i in range(grid_size):
+        for j in range(grid_size):
+            cell_x = grid_x + j * cell_size
+            cell_y = grid_y + i * cell_size
+            cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
+
+            cell_color = (255,248,220)  # Default color (white)
+            if selected_cell and (j, i) == selected_cell:
+                cell_color = (247, 197, 102)  # Selected color (green)
+            pygame.draw.rect(screen, cell_color, cell_rect)
+
+            # Render cell border
+            pygame.draw.rect(screen, (0,0,0), cell_rect, 2)
+
+            # Render cell value
+            cell_value = game_board[i][j]
+            if cell_value != 0:
+                font = pygame.font.SysFont(None, 36)
+                text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
+                text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
+                screen.blit(text, text_rect)
+
+    for group in groups:
+        for i, j in group[:-2]:
+            # Draw horizontal line
+            if i < grid_size - 1 and (i + 1, j) in group:
+                pygame.draw.line(screen, (255,248,220), ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
+                                ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
+            # Draw vertical line
+            if j < grid_size - 1 and (i, j + 1) in group:
+                pygame.draw.line(screen, (255,248,220), ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
+                                ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
+
+        first_cell = group[0]
+        if not isinstance(group[-1], tuple):
+            sum_value = group[-1]
+            text_op = group[-2]
+            sum_text = str(sum_value)
+            combined_text = sum_text + text_op
+            font = pygame.font.Font(None, 36)
+            text_surface = font.render(combined_text, True, (0, 0, 0))
+
+            text_rect = text_surface.get_rect(
+                topleft=(grid_x + first_cell[1] * cell_size + 2, grid_y + first_cell[0] * cell_size + 2)
+            )
+
+            screen.blit(text_surface, text_rect)
 
 def start_game(grid_size, operation, difficulty):
     pygame.init()
@@ -431,8 +564,9 @@ def start_game(grid_size, operation, difficulty):
     screen_width, screen_height = screen.get_size()
 
     # Generate the game board based on the selected grid size
-    game_board,groups = generate_board(grid_size,operation)
     # Store the initial state for the reset functionality
+    game_board = [[0] * grid_size for _ in range(grid_size)]
+
     initial_board = [row[:] for row in game_board]
 
     # Set the overall grid size to be consistent, e.g., 300x300 pixels
@@ -513,69 +647,23 @@ def start_game(grid_size, operation, difficulty):
             num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
                                       font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
 
-    # List to keep track of moves for undo functionality
     move_history = []
-
-    # Initialize selected cell
     selected_cell = None
-
-    # Initialize timer variables
     start_time = time.time()
     elapsed_time = 0
 
+    def init():
+        nonlocal move_history, selected_cell, start_time, elapsed_time
+        move_history = []
+        selected_cell = None
+        start_time = time.time()
+        elapsed_time = 0
     # Placeholder loop to keep the screen open
+    board_answer,groups = generate_board(grid_size,operation)
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
-
-        # Render the game board on the screen
-        for i in range(grid_size):
-            for j in range(grid_size):
-                cell_x = grid_x + j * cell_size
-                cell_y = grid_y + i * cell_size
-                cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
-
-                # Render cell background color
-                cell_color = (255,248,220)  # Default color (white)
-                if selected_cell and (j, i) == selected_cell:
-                    cell_color = (247, 197, 102)  # Selected color (green)
-                pygame.draw.rect(screen, cell_color, cell_rect)
-
-                # Render cell border
-                pygame.draw.rect(screen, (0,0,0), cell_rect, 2)
-
-                # Render cell value
-                cell_value = game_board[i][j]
-                if cell_value != 0:
-                    font = pygame.font.SysFont(None, 36)
-                    text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
-                    text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
-                    screen.blit(text, text_rect)
-
-        for group in groups:
-            for i, j in group[:-2]:
-                # Draw horizontal line
-                if i < grid_size - 1 and (i + 1, j) in group:
-                    pygame.draw.line(screen, (0,0,0), ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
-                                    ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
-                # Draw vertical line
-                if j < grid_size - 1 and (i, j + 1) in group:
-                    pygame.draw.line(screen, (0,0,0), ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
-                                    ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
-
-            first_cell = group[0]
-            if not isinstance(group[-1], tuple):
-                sum_value = group[-1]
-                text_op = group[-2]
-                sum_text = str(sum_value)
-                combined_text = sum_text + text_op
-                font = pygame.font.Font(None, 36)
-                text_surface = font.render(combined_text, True, (0, 0, 0))
-
-                text_rect = text_surface.get_rect(
-                    topleft=(grid_x + first_cell[1] * cell_size + 2, grid_y + first_cell[0] * cell_size + 2)
-                )
-
-                screen.blit(text_surface, text_rect)
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups)
+        
 
         # Render control buttons
         for button in control_buttons:
@@ -625,7 +713,8 @@ def start_game(grid_size, operation, difficulty):
                                 game_board[selected_cell[1]][selected_cell[0]] = i + 1
                     # Check if additional buttons are clicked
                     if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        start_game(grid_size, operation, difficulty)  # Restart the game
+                        board_answer,groups = generate_board(grid_size,operation)
+                        init()
                     if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
                         solve_game(game_board)  # Placeholder for the solve functionality
                     if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
@@ -667,21 +756,21 @@ def generate_board(grid_size,operation):
     print(grid_size)
     print(subgrid)
 
-    ken_solver = KenPuzzleMaker(grid_size)
+    ken_play = KenPuzzleMaker(grid_size)
     print("operation: ",operation)
     # Generate the Sudoku board
-    ken_solver.updateOp(operation)
+    ken_play.updateOp(operation)
 
-    ken_solver.generate_answer_board(grid_size,subgrid)
-    updated_op = ken_solver.op
+    ken_play.generate_answer_board(grid_size,subgrid)
+    updated_op = ken_play.op
     print("updated op: ",updated_op)
 
     # Access the board, random, and groups values
-    board = ken_solver.board
-    updated_groups = ken_solver.getAllGroups()
+    board = ken_play.board
+    updated_groups = ken_play.getAllGroups()
     print(updated_groups)
-    # random_instance = ken_solver.random
-    # groups = ken_solver.groups
+    # random_instance = ken_play.random
+    # groups = ken_play.groups
 
     # board = [[0] * grid_size for _ in range(grid_size)]
     # You can customize the board generation logic here

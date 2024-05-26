@@ -8,8 +8,9 @@ class KenPuzzleMaker:
         self.groups = {}
         self.groupwithnumber = []
         self.groupwithval = []
+        self.solver_group = []
         self.op = None
-
+        self.size = board_size
     def generate_answer_board(self,board_size , subgrid):
         self.initialize_board(board_size)
         self.fill_board(0, 0 ,subgrid ,board_size)
@@ -18,7 +19,12 @@ class KenPuzzleMaker:
         self.print_board()
         self.print_board_coord(board_size)
         self.print_group_cells()
-
+    
+    def generate_empty_board(self):
+        self.initialize_board(self.size)
+        self.print_board()
+        self.print_board_coord(self.size)
+        
     def initialize_board(self,board_size):
         self.board = [[0] * board_size for _ in range(board_size)]
 
@@ -221,11 +227,47 @@ class KenPuzzleMaker:
     def get_board_value(self, x, y):
         return self.board[x][y]
     
-# if __name__ == "__main__":
-#     solver = KenPuzzleMaker(board_size)
-#     solver.generate_answer_board(board_size,subgrid)
-#     getgroups = solver.getAllGroups()
-#     print("each group: ",solver.groupwithval)
-#     print("all groups: ",getgroups)
+    def add_group(self,group):
+        sort = sorted(group)
+        self.solver_group.append(sort)
+    
+    def find_group(self,target_cell):
+        for group in self.solver_group:
+            for cell in group:
+                if target_cell == cell:
+                    return group
+        return None
+
+    def update_group(self,group,total,operation):
+        for row in self.solver_group:
+            if row == group:
+                row.append(total)
+                row.append(operation)
+                break
+        
+if __name__ == "__main__":
+    solver = KenPuzzleMaker(6)
+    # solver.updateOp("*/")
+    # getgroups = solver.getAllGroups()
+    # solver.generate_answer_board(6,3)
+    # print("each group: ",solver.groupwithval)
+    # print("all groups: ",getgroups)
+    # print("group: ",solver.groups)
+    
+    solver.generate_empty_board()
+    group1 = [(0,1),(0,2)]
+    group2 = [(2,1),(2,2)]
+    group3 = [(0,1)]
+    solver.add_group(group1)
+    solver.add_group(group2)
+
+    print("update1: ",solver.solver_group)
+    solver.update_group(group3,10,"+")
+    solver.update_group(group2,20,"/")
+
+    print("update2: ",solver.solver_group)
+    
+    found = solver.find_group((2,1))
+    print("update3: ",found)
 
 
