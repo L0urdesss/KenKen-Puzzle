@@ -5,8 +5,9 @@ import time
 import pygame
 from moviepy.editor import VideoFileClip
 from backend import KenPuzzleMaker
-
+from backend import KenAiSolver
 from button import Button
+import random
 
 pygame.init()
 
@@ -266,22 +267,23 @@ def select_difficulty(grid_size, operation):
 
 
 def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , groups):
+
     for i in range(grid_size):
         for j in range(grid_size):
-            cell_x = grid_x + i * cell_size
-            cell_y = grid_y + j * cell_size
+            cell_x = grid_x + j * cell_size
+            cell_y = grid_y + i * cell_size
             cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
             cell_color = (255, 255, 255)  # Default color (white)
 
             if selected_group:
                 for coordinate in selected_group:
-                    y, x = coordinate 
+                    x, y = coordinate 
                     if (i, j) == (x, y):
                         cell_color = (0, 255, 0) 
 
             if target_group:
                 for coordinate in target_group:
-                    y, x = coordinate 
+                    x, y = coordinate 
                     if (i, j) == (x, y):
                         cell_color = (255, 0, 0)  
 
@@ -298,27 +300,28 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
 
     if groups:
         for group in groups:
-            for i, j in group:
-                if not isinstance(i, int) or not isinstance(j, int):
-                    continue 
-                color = (255,255,255)
-                if group == selected_group:
+            # Separate the cells from the additional elements in the group
+            cells = [item for item in group if isinstance(item, tuple)]
+            extra_elements = [item for item in group if not isinstance(item, tuple)]
+
+            for i, j in cells:
+                color = (255, 255, 255)
+                if cells == selected_group:
                     color = (0, 255, 0)
 
                 # Draw horizontal line
-                if i < grid_size - 1 and (i + 1, j) in group:
-                    pygame.draw.line(screen, color, ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
-                                    ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
+                if i < grid_size - 1 and (i + 1, j) in cells:
+                    pygame.draw.line(screen, color, ((grid_x + j * cell_size) + 2, (grid_y + (i + 1) * cell_size) - 1),
+                                    ((grid_x + (j + 1) * cell_size) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
                 # Draw vertical line
-                if j < grid_size - 1 and (i, j + 1) in group:
-                    pygame.draw.line(screen, color, ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
-                                    ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
+                if j < grid_size - 1 and (i, j + 1) in cells:
+                    pygame.draw.line(screen, color, ((grid_x + (j + 1) * cell_size) - 1, (grid_y + i * cell_size) + 2),
+                                    ((grid_x + (j + 1) * cell_size) - 1, (grid_y + (i + 1) * cell_size) - 3), 4)
 
-        
-            first_cell = group[0]
-            if not isinstance(group[-1], tuple):
-                sum_value = group[-1]
-                text_op = group[-2]
+            first_cell = cells[0]  # First cell in the group
+            if len(extra_elements) >= 2 and isinstance(extra_elements[-2], int):
+                sum_value = extra_elements[-2]
+                text_op = extra_elements[-1]
                 sum_text = str(sum_value)
                 combined_text = sum_text + text_op
                 font = pygame.font.Font(None, 36)
@@ -329,7 +332,10 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
                 )
 
                 screen.blit(text_surface, text_rect)
-    
+
+
+        
+
 
 def start_solver(grid_size):
     pygame.init()
@@ -359,22 +365,27 @@ def start_solver(grid_size):
                             font=get_font(24, 1),
                             base_color=BLUE, hovering_color=H_BLUE)
     
-    UNDO_BUTTON = Button(image=undo_img, pos=(button_x - 290, button_y_start + 1 * button_y_start - 10), text_input="",
+    PLUS_BUTTON = Button(image=undo_img, pos=(button_x - 290, button_y_start + 1 * button_y_start - 10), text_input="",
                             font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
-    RESET_BUTTON = Button(image=reset_img,
+    MINUS_BUTTON = Button(image=reset_img,
                             pos=(button_x + button_x_spacing - 290, button_y_start + 1 * button_y_start - 10),
                             text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
-    ERASE_BUTTON = Button(image=erase_img,
+    TIMES_BUTTON = Button(image=erase_img,
                             pos=(button_x + 2 * button_x_spacing - 290, button_y_start +1  * button_y_start - 10),
                             text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    
+    DIVIDE_BUTTON = Button(image=erase_img,
+                            pos=(button_x + 3 * button_x_spacing - 290, button_y_start +1  * button_y_start - 10),
+                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    
 
     BACK_BUTTON = Button(image=back_img,
                             pos=(40, 30),  # Adjust the values as needed for exact positioning
                             text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
-    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON]
+    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON , DIVIDE_BUTTON]
 
     num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
     button_y_start = 400  # Adjust this value as needed
@@ -407,18 +418,55 @@ def start_solver(grid_size):
     target_group = []
     start_time = time.time()
     elapsed_time = 0
-
+    current_sum = 0
     ken_solver = KenPuzzleMaker(grid_size)
     ken_solver.generate_empty_board()
 
     def init():
-        nonlocal move_history, selected_group, start_time, elapsed_time, target_group 
+        nonlocal move_history, selected_group, start_time, elapsed_time, target_group, ken_solver
         move_history = []
         selected_group = None
         start_time = time.time()
         elapsed_time = 0
-        target_group = None
+        target_group = []
+        ken_solver = KenPuzzleMaker(grid_size)
 
+    def is_valid(selected_cell, target_group, grid_size):
+        for group in ken_solver.solver_group:
+            if selected_cell in group:
+                print("in group")
+
+                return False
+            
+        if not target_group:
+            return True
+        
+
+        
+        x, y = selected_cell
+    
+        adjacent_positions = [
+            (x-1, y),  # Above
+            (x+1, y),  # Below
+            (x, y-1),  # Left
+            (x, y+1),   # Right
+            (x, y)
+
+        ]
+        
+        valid_adjacent_positions = [
+            (i, j) for i, j in adjacent_positions
+            if 0 <= i < grid_size and 0 <= j < grid_size
+        ]
+        
+        for cell in target_group:
+            if cell in valid_adjacent_positions:
+                return True
+            
+        print("False in main")
+
+        return False
+    
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
         draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , ken_solver.solver_group)
@@ -454,47 +502,94 @@ def start_solver(grid_size):
                         cell_y = (mouse_y - grid_y) // cell_size
                         selected_cell = (cell_y, cell_x)
                         print("selected cell: ",selected_cell)
-                        selected_group = ken_solver.find_group(selected_cell)
+                        selected_group = ken_solver.find_group_coordinates(selected_cell)
                         print("Selected group: ",selected_group)
+                        current_sum = 0
                     else:
                         for i, button in enumerate(num_buttons):
                             if button.checkForInput((mouse_x, mouse_y)):
                                 if selected_group:
-                                    previous_value = game_board[selected_group[1]][selected_group[0]]
-                                    move_history.append((selected_group, previous_value))
-                                    game_board[selected_group[1]][selected_group[0]] = i + 1
+                                    num_clicked = i + 1
+                                    current_sum = current_sum * 10 + num_clicked
+                                    print(current_sum)
+                                    curr_group = ken_solver.findGroup(selected_group)
+                                    curr_op = ken_solver.getGroupOp(curr_group)
+                                    print("curr_group: ",curr_group)
+                                    print("curop: ",curr_op)
+                                    ken_solver.update_group(selected_group,current_sum,curr_op)
                         if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            start_solver(grid_size)  # Restart the game
                             init()
-
                         if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            solve_game(game_board)  # Placeholder for the solve functionality
-                        if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            if move_history:
-                                last_move = move_history.pop()
-                                selected_group, previous_value = last_move
-                                game_board[selected_group[1]][selected_group[0]] = previous_value
-                        if RESET_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            game_board =  [[0] * grid_size for _ in range(grid_size)]  # Reset to the initial state
+                            solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
+                            game_board = solution_board
+
+                        if PLUS_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            print("clicked1")
+                            if selected_group:
+                                op_clicked = "+"
+                                print(op_clicked)
+                                curr_group = ken_solver.findGroup(selected_group)
+                                total = ken_solver.getGroupTotal(curr_group)
+                                print("curr_group: ",curr_group)
+                                print("total: ",total)
+                                ken_solver.update_group(selected_group,total,op_clicked)
+                        if MINUS_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            print("clicked2")
+                            if selected_group:
+                                op_clicked = "-"
+                                print(op_clicked)
+                                curr_group = ken_solver.findGroup(selected_group)
+                                total = ken_solver.getGroupTotal(curr_group)
+                                print("curr_group: ",curr_group)
+                                print("total: ",total)
+                                ken_solver.update_group(selected_group,total,op_clicked)                        
+                        if TIMES_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            print("clicked3")
+                            if selected_group:
+                                op_clicked = "*"
+                                print(op_clicked)
+                                curr_group = ken_solver.findGroup(selected_group)
+                                total = ken_solver.getGroupTotal(curr_group)
+                                print("curr_group: ",curr_group)
+                                print("total: ",total)
+                                ken_solver.update_group(selected_group,total,op_clicked)
+                        if DIVIDE_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            print("clicked4")
+                            if selected_group:
+                                op_clicked = "/"
+                                print(op_clicked)
+                                curr_group = ken_solver.findGroup(selected_group)
+                                total = ken_solver.getGroupTotal(curr_group)
+                                print("curr_group: ",curr_group)
+                                print("total: ",total)
+                                ken_solver.update_group(selected_group,total,op_clicked)
                         if BACK_BUTTON.rect.collidepoint(event.pos):
                             main()
-                        if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            if selected_group:
-                                previous_value = game_board[selected_group[1]][selected_group[0]]
-                                move_history.append((selected_group, previous_value))
-                                game_board[selected_group[1]][selected_group[0]] = 0
                 elif event.button == 3:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
-
-                    if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
+                    if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height :
                         cell_x = (mouse_x - grid_x) // cell_size
                         cell_y = (mouse_y - grid_y) // cell_size
                         selected_cell = (cell_y, cell_x)
-
-                        if selected_cell in target_group:
-                            target_group.remove(selected_cell)
+                        if target_group:
+                            if not is_valid(selected_cell,target_group,grid_size):
+                                print("False here")
+                                selected_cell = None
+                            else:
+                                if selected_cell in target_group:
+                                    target_group.remove(selected_cell)
+                                else:
+                                    print("solvergroup: ",ken_solver.solver_group)
+                                    target_group.append(selected_cell)       
                         else:
-                            target_group.append(selected_cell)       
+                            if not is_valid(selected_cell,target_group,grid_size):
+                                selected_cell = None
+                            else:
+                                if selected_cell in target_group:
+                                    target_group.remove(selected_cell)
+                                else:
+                                    target_group.append(selected_cell)      
+
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
@@ -508,24 +603,49 @@ def start_solver(grid_size):
                         print("SAVED")
                         target_group = []
 
+def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board, target_group, selected_group):
+    def draw_update(game_board):
+        # This function updates the display with the current board state
+        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group, puzzle)
+        pygame.display.update()
+        time.sleep(0.5)  # Adjust the delay as needed to visualize the steps
 
-def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups):
+
+    # Initial drawing of the puzzle
+    draw_update(game_board)
+    
+    ken_ai = KenAiSolver(puzzle, draw_update)
+    solution_board = ken_ai.solve_kenken(grid_size)
+    
+    return solution_board
+
+def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer):
     for i in range(grid_size):
         for j in range(grid_size):
             cell_x = grid_x + j * cell_size
             cell_y = grid_y + i * cell_size
             cell_rect = pygame.Rect(cell_x, cell_y, cell_size, cell_size)
+            cell_value = game_board[i][j]
+            cell_answer = board_answer[i][j]
 
-            cell_color = (255,248,220)  # Default color (white)
+            cell_color = (255,248,220)  
             if selected_cell and (j, i) == selected_cell:
-                cell_color = (247, 197, 102)  # Selected color (green)
+                cell_color = (247, 197, 102) 
+
+            if cell_value != 0:
+                # print("value: ",cell_value)
+                # print("answer: ",cell_answer)
+                if cell_value == cell_answer:
+                    cell_color = (0,255,0)
+                else:
+                    cell_color = (255,0,0)
+
             pygame.draw.rect(screen, cell_color, cell_rect)
 
             # Render cell border
             pygame.draw.rect(screen, (0,0,0), cell_rect, 2)
 
             # Render cell value
-            cell_value = game_board[i][j]
             if cell_value != 0:
                 font = pygame.font.SysFont(None, 36)
                 text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
@@ -535,12 +655,22 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
     for group in groups:
         for i, j in group[:-2]:
             # Draw horizontal line
+            color = (255,248,220)
+            if selected_cell and (j, i) == selected_cell:
+                color = (247, 197, 102) 
+            if game_board[i][j]:
+                if game_board[i][j] != board_answer[i][j]:
+                    color = (255,0,0)
+                else:
+                    color = (0,255,0)
+
+
             if i < grid_size - 1 and (i + 1, j) in group:
-                pygame.draw.line(screen, (255,248,220), ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
+                pygame.draw.line(screen, color, ((grid_x + j * cell_size )+2, (grid_y + (i + 1) * cell_size) - 1),
                                 ((grid_x + (j + 1) * cell_size ) - 3, (grid_y + (i + 1) * cell_size) - 1), 4)
             # Draw vertical line
             if j < grid_size - 1 and (i, j + 1) in group:
-                pygame.draw.line(screen, (255,248,220), ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
+                pygame.draw.line(screen, color, ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + i * cell_size)+ 2),
                                 ((grid_x + (j + 1) * cell_size) - 1 , (grid_y + (i + 1) * cell_size) - 3), 4)
 
         first_cell = group[0]
@@ -651,18 +781,21 @@ def start_game(grid_size, operation, difficulty):
     selected_cell = None
     start_time = time.time()
     elapsed_time = 0
+    available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
 
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time
+        nonlocal move_history, selected_cell, start_time, elapsed_time ,available_cells
         move_history = []
         selected_cell = None
         start_time = time.time()
         elapsed_time = 0
+        available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
+
     # Placeholder loop to keep the screen open
     board_answer,groups = generate_board(grid_size,operation)
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
-        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups)
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups , board_answer)
         
 
         # Render control buttons
@@ -714,9 +847,28 @@ def start_game(grid_size, operation, difficulty):
                     # Check if additional buttons are clicked
                     if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
                         board_answer,groups = generate_board(grid_size,operation)
+                        game_board = [row[:] for row in initial_board]
                         init()
                     if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        solve_game(game_board)  # Placeholder for the solve functionality
+                        if selected_cell:
+                            for i in range(grid_size):
+                                for j in range(grid_size):
+                                    if selected_cell == (j,i):
+                                        game_board[i][j] = board_answer[i][j]
+                                        available_cells.remove(selected_cell)
+
+                        else:
+                            if available_cells:
+                                random_cell = random.choice(tuple(available_cells))
+                                available_cells.remove(random_cell)
+                                print("random: ",random_cell)
+                            for i in range(grid_size):
+                                for j in range(grid_size):
+                                    if random_cell == (j,i):
+                                        game_board[i][j] = board_answer[i][j]
+                        selected_cell = None
+
+
                     if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if move_history:
                             last_move = move_history.pop()
@@ -739,10 +891,6 @@ def start_game(grid_size, operation, difficulty):
                         move_history.append((selected_cell, previous_value))
                         game_board[selected_cell[1]][selected_cell[0]] = 0
 
-def solve_game(game_board):
-    # Placeholder function for the solve functionality
-    # Implement the logic to solve the KenKen puzzle
-    pass
 
 
 def generate_board(grid_size,operation):

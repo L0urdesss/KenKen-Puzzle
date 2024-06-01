@@ -238,36 +238,211 @@ class KenPuzzleMaker:
                     return group
         return None
 
-    def update_group(self,group,total,operation):
+    def findGroup(self, target_group):
+        print("target inside find: ", target_group)
+        for item in self.solver_group:
+            print("Current item:", item)
+            print("itemchecked: ",item[:-2])
+            if item[:-2] == target_group:
+                print("FOUND")
+                return item
+        return None
+
+    
+    def getGroupOp(self,target_group):
+        for group in self.solver_group:
+            print("groups: ",group)
+            print("targetgroups: ",target_group)
+            if target_group == group:
+                print("found")
+                return group[-1]
+        return ""
+    
+    def getGroupTotal(self,target_group):
+        for group in self.solver_group:
+            print("groups: ",group)
+            print("targetgroups: ",target_group)
+            if target_group == group:
+                print("found")
+                return group[-2]
+        return 0
+    
+    def find_group_coordinates(self,target_cell):
+        tuple_array = []
+        for group in self.solver_group:
+            if target_cell in group:
+                tuple_array = [item for item in group if isinstance(item, tuple)]
+                return tuple_array
+        return None
+
+    def update_group(self, group, total, operation):
         for row in self.solver_group:
-            if row == group:
-                row.append(total)
-                row.append(operation)
+            if set(group) == set(row[:len(group)]):  # Ensure group matches part of the row
+                total_updated = False
+                operation_updated = False
+                
+                for i, item in enumerate(row[len(group):], start=len(group)):
+                    if isinstance(item, int):
+                        row[i] = total
+                        total_updated = True
+                    if isinstance(item, str):
+                        row[i] = operation
+                        operation_updated = True
+                
+                if not total_updated:
+                    row.append(total)
+                
+                if not operation_updated:
+                    row.append(operation)
+                
                 break
+
+class KenAiSolver:
+    def __init__(self, puzzle, draw_update):
+        self.puzzle = puzzle
+        self.draw_update = draw_update
+
+    def solve_kenken(self, size):
+        def parse_input(puzzle):
+            groups = []
+            for group in puzzle:
+                cells = group[:-2]
+                total = group[-2]
+                operation = group[-1]
+                groups.append((cells, operation, total))
+            return groups
+
+        def is_valid(board, groups):
+            for cells, operation, total in groups:
+                values = [board[x][y] for x, y in cells if board[x][y] != 0]
+                if len(values) == len(cells):
+                    if not check_constraint(values, operation, total):
+                        return False
+            return True
+
+        def check_constraint(values, operation, total):
+            if operation == '+':
+                return sum(values) == total
+            elif operation == '-':
+                return abs(values[0] - values[1]) == total
+            elif operation == '*':
+                product = 1
+                for value in values:
+                    product *= value
+                return product == total
+            elif operation == '/':
+                return max(values) / min(values) == total
+            elif operation == '':
+                return values[0] == total
+            return False
+
+        def is_safe(board, row, col, num):
+            for x in range(size):
+                if board[row][x] == num or board[x][col] == num:
+                    return False
+            return True
+
+        def update_conflicts(conflicts, var, cause):
+            conflicts[var] = cause
+
+        def determine_conflict_var(conflicts, current_var):
+            row, col = current_var
+            if col > 0:
+                return (row, col - 1)
+            if row > 0:
+                return (row - 1, size - 1)
+            return None
+
+        def backjumping(board, groups, row, col, conflicts):
+            if row == size:
+                return board
+
+            next_row, next_col = (row, col + 1) if col + 1 < size else (row + 1, 0)
+
+            if board[row][col] != 0:
+                return backjumping(board, groups, next_row, next_col, conflicts)
+
+            for num in range(1, size + 1):
+                if is_safe(board, row, col, num):
+                    board[row][col] = num
+                    self.draw_update(board)
+                    if is_valid(board, groups):
+                        result = backjumping(board, groups, next_row, next_col, conflicts)
+                        if result:
+                            return result
+                    board[row][col] = 0
+                    # self.draw_update(board)
+            
+            conflict_var = (row, col)
+            update_conflicts(conflicts, conflict_var, determine_conflict_var(conflicts, conflict_var))
+            return None
+
+        groups = parse_input(self.puzzle)
+        board = [[0] * size for _ in range(size)]
+        conflicts = {}
+        solution = backjumping(board, groups, 0, 0, conflicts)
+        return solution
+
         
 if __name__ == "__main__":
-    solver = KenPuzzleMaker(6)
+    puzzle = [
+        [(1, 0), (0, 0), 3, '*'],
+        [(2, 0), 2,''],
+        [(0,1), (0,2), 3, '+'],
+        [(1, 1), (2, 1), 3, '/'],
+        [(1, 2), 2, ''],
+        [(2, 2), 3, ''],
+
+    ]
+    def draw_update(board):
+        for row in board:
+            print(row)
+        print()
+
+    solver = KenAiSolver(puzzle, draw_update)
+    solution = solver.solve_kenken(3)
+    print("Solution:")
+    for row in solution:
+        print(row)
+
+    # solver = KenPuzzleMaker(6)
     # solver.updateOp("*/")
     # getgroups = solver.getAllGroups()
     # solver.generate_answer_board(6,3)
     # print("each group: ",solver.groupwithval)
     # print("all groups: ",getgroups)
     # print("group: ",solver.groups)
+
+    # solver = KenPuzzleMaker(6)
+    # solver.generate_empty_board()
+    # group1 = [(0,1),(0,2)]
+    # group2 = [(2,1),(2,2)]
+    # group3 = [(0,1)]
+    # solver.add_group(group1)
+    # solver.add_group(group2)
+
+    # print("update1: ",solver.solver_group)
+    # solver.update_group(group3,10,"+")
+    # solver.update_group(group2,20,"/")
+    # solver.update_group(group1,20,"-")
+    # print("update2: ",solver.solver_group)
+
+    # solver.update_group(group1,30,"*")
+
+    # print("update3: ",solver.solver_group)
     
-    solver.generate_empty_board()
-    group1 = [(0,1),(0,2)]
-    group2 = [(2,1),(2,2)]
-    group3 = [(0,1)]
-    solver.add_group(group1)
-    solver.add_group(group2)
+    # found = solver.find_group((0,1))
+    # print("update3.5: ",found)
 
-    print("update1: ",solver.solver_group)
-    solver.update_group(group3,10,"+")
-    solver.update_group(group2,20,"/")
+    # group = solver.findGroup([(0,1),(0,2)])
+    # print("update4: ",group)
+    # groupop = solver.getGroupOp(group)
+    # print("update5: ",groupop)
 
-    print("update2: ",solver.solver_group)
-    
-    found = solver.find_group((2,1))
-    print("update3: ",found)
 
+    # size = 3
+    # ai = KenAiSolver(puzzle)
+    # solution = ai.solve_kenken(size)
+    # for row in solution:
+    #     print(row)
 
