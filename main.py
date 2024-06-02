@@ -40,7 +40,21 @@ solve_img = pygame.image.load('resources/solve.png')
 undo_img = pygame.image.load('resources/undo.png')
 reset_img = pygame.image.load('resources/reset.png')
 erase_img = pygame.image.load('resources/eraser.png')
+home_img = pygame.image.load('resources/home.png')
 back_img = pygame.image.load('resources/back.png')
+playgame_img = pygame.image.load('resources/play_menu.png')
+solver_img = pygame.image.load('resources/solve_menu.png')
+controls_img = pygame.image.load('resources/tips.png')
+exit_border = pygame.image.load('resources/border1.png')
+start_border = pygame.image.load('resources/border2.png')
+pencil_img = pygame.image.load('resources/pencil.png')
+plus_img = pygame.image.load('resources/plus.png')
+minus_img = pygame.image.load('resources/minus.png')
+multiplication_img = pygame.image.load('resources/multiplication.png')
+division_img = pygame.image.load('resources/division.png')
+solver_erase_img = pygame.image.load('resources/solver_erase.png')
+music_img = pygame.image.load('resources/music.png')
+mute_img = pygame.image.load('resources/mute.png')
 
 
 # Scale the 3x3 image
@@ -52,12 +66,26 @@ plus_minus_image = pygame.transform.scale(plus_minus_image, (150, 150))
 multiply_divide_image = pygame.transform.scale(multiply_divide_image, (150, 150))
 plus_minus_multiply_image = pygame.transform.scale(plus_minus_multiply_image, (150, 150))
 random_image = pygame.transform.scale(random_image, (150, 150))
-new_game_img = pygame.transform.scale(new_game_img, (180, 90))
-solve_img = pygame.transform.scale(solve_img, (180, 90))
-back_img = pygame.transform.scale(back_img, (50, 50))
-undo_img = pygame.transform.scale(undo_img, (90, 90))
-reset_img = pygame.transform.scale(reset_img, (90, 90))
-erase_img = pygame.transform.scale(erase_img, (90, 90))
+new_game_img = pygame.transform.scale(new_game_img, (450, 80))
+solve_img = pygame.transform.scale(solve_img, (450, 80))
+back_img = pygame.transform.scale(back_img, (100, 40))
+undo_img = pygame.transform.scale(undo_img, (70, 70))
+reset_img = pygame.transform.scale(reset_img, (70, 70))
+erase_img = pygame.transform.scale(erase_img, (70, 70))
+pencil_img = pygame.transform.scale(pencil_img, (70, 70))
+playgame_img = pygame.transform.scale(playgame_img, (400, 400))
+solver_img = pygame.transform.scale(solver_img, (400, 400))
+home_img = pygame.transform.scale(home_img, (200, 100))
+controls_img = pygame.transform.scale(controls_img, (70, 40))
+exit_border = pygame.transform.scale(exit_border, (180, 60))
+start_border = pygame.transform.scale(start_border, (210, 70))
+plus_img = pygame.transform.scale(plus_img, (90, 90))
+minus_img = pygame.transform.scale(minus_img, (90, 90))
+multiplication_img = pygame.transform.scale(multiplication_img, (90, 90))
+division_img = pygame.transform.scale(division_img, (90, 90))
+solver_erase_img = pygame.transform.scale(solver_erase_img, (90, 90))
+music_img = pygame.transform.scale(music_img, (70, 40))
+mute_img = pygame.transform.scale(mute_img, (70, 40))
 pygame.display.set_caption("KenKen Puzzle")
 
 
@@ -101,6 +129,8 @@ def get_font(size, type):
         return pygame.font.SysFont("berlin sans fb demi", size)
     if type == 2:
         return pygame.font.SysFont("Arial Narrow", size)
+    if type == 3:
+        return pygame.font.Font("fonts/NerkoOne-Regular.ttf", size)
 
 
 
@@ -109,16 +139,19 @@ def get_font(size, type):
 def select_grid_size(play):
     selecting = True
     while selecting:
-        screen.fill(WHITE)
+        screen.fill((108, 3, 41))  # Fill screen with black color
         SELECT_MOUSE_POS = pygame.mouse.get_pos()
 
-        # Load the background image
-        background_image = pygame.image.load(os.path.join("resources", "GAME BG.png")).convert_alpha()
-        screen.blit(background_image, (0, 0))  # Blit the background image onto the screen
-
-        TEXT = get_font(50, 1).render("SELECT GRID SIZE", True, BLUE)
-        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2,220))  # Moved down by 50 pixels
+        # Render "Select Grid Size" text
+        TEXT = get_font(90, 3).render("Play Mode", True, (255, 248, 220))
+        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 120))  # Moved down by 50 pixels
         screen.blit(TEXT, TEXT_RECT)
+
+        # Render "Select here" text
+        SELECT_HERE_TEXT = get_font(40, 3).render("Select Grid Size", True, (247, 197, 102))
+        SELECT_HERE_RECT = SELECT_HERE_TEXT.get_rect(center=(screen_width / 2, 200))  # Positioned below "Select Grid Size"
+        screen.blit(SELECT_HERE_TEXT, SELECT_HERE_RECT)
+
         # Adjusted positions for the grid buttons with added space
         button_width = 200  # Adjust as needed
         space_between = 150  # Adjust as needed
@@ -130,10 +163,14 @@ def select_grid_size(play):
                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
         GRID_6x6_BUTTON = Button(image=grid_6x6_image, pos=(start_x + 2 * (button_width + space_between), start_y),
                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        BACK_BUTTON = Button(image=None, pos=(screen_width / 2, 600),  # Move back button below
-                             text_input="BACK", font=get_font(68, 1), base_color=BLUE, hovering_color=H_BLUE)
+        BACK_BUTTON = Button(image=back_img, pos=(screen.get_width() - back_img.get_width() + 10, 50),
+                             # Adjusted x-coordinate
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        CONTROLS_BUTTON = Button(image=controls_img, pos=(
+            screen_width - controls_img.get_width() - 20, screen_height - controls_img.get_height() - 20),
+                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-        for button in [GRID_3x3_BUTTON, GRID_4x4_BUTTON, GRID_6x6_BUTTON, BACK_BUTTON]:
+        for button in [GRID_3x3_BUTTON, GRID_4x4_BUTTON, GRID_6x6_BUTTON, BACK_BUTTON, CONTROLS_BUTTON]:
             button.changeColor(SELECT_MOUSE_POS)
             button.update(screen)
 
@@ -158,19 +195,27 @@ def select_grid_size(play):
                     else:
                         start_solver(6)
                 if BACK_BUTTON.checkForInput(SELECT_MOUSE_POS):
-                    selecting = False
+                    main()
+                if CONTROLS_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    controls()
 
         pygame.display.update()
+
+
 def select_operations(grid_size):
     selecting = True
     while selecting:
-        screen.fill(WHITE)
+        screen.fill((108, 3, 41))  # Fill screen with black color
         SELECT_MOUSE_POS = pygame.mouse.get_pos()
-        background_image = pygame.image.load(os.path.join("resources", "GAME BG.png")).convert_alpha()
-        screen.blit(background_image, (0, 0))  # Blit the background image onto the screen
-        TEXT = get_font(50, 1).render("SELECT OPERATION", True, BLUE)
-        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 200))
+        TEXT = get_font(90, 3).render("Play Mode", True, (255, 248, 220))
+        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 120))  # Moved down by 50 pixels
         screen.blit(TEXT, TEXT_RECT)
+
+        # Render "Select here" text
+        SELECT_HERE_TEXT = get_font(40, 3).render("Select Operation", True, (247, 197, 102))
+        SELECT_HERE_RECT = SELECT_HERE_TEXT.get_rect(
+            center=(screen_width / 2, 200))  # Positioned below "Select Grid Size"
+        screen.blit(SELECT_HERE_TEXT, SELECT_HERE_RECT)
         button_width = 100  # Adjust as needed
         space_between =100 # Adjust as needed
         start_x = (screen_width - (4 * button_width + 3 * space_between)) / 2 + 150  # Move the buttons to the right
@@ -197,11 +242,15 @@ def select_operations(grid_size):
                                # Move further right
                                text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-        BACK_BUTTON = Button(image=None, pos=(screen_width / 2, 650),
-                             text_input="BACK", font=get_font(68, 1), base_color=BLUE, hovering_color=H_BLUE)
+        BACK_BUTTON = Button(image=back_img, pos=(screen.get_width() - back_img.get_width() + 10, 50),
+                             # Adjusted x-coordinate
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        CONTROLS_BUTTON = Button(image=controls_img, pos=(
+            screen_width - controls_img.get_width() - 20, screen_height - controls_img.get_height() - 20),
+                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
         for button in [PLUS_BUTTON, PLUS_MINUS_BUTTON, MULTIPLY_DIVIDE_BUTTON, PLUS_MINUS_MULTIPLY_BUTTON,
-                       RANDOM_BUTTON, BACK_BUTTON]:
+                       RANDOM_BUTTON, BACK_BUTTON, CONTROLS_BUTTON]:
             button.changeColor(SELECT_MOUSE_POS)
             button.update(screen)
 
@@ -222,19 +271,25 @@ def select_operations(grid_size):
                     select_difficulty(grid_size, "?")
                 if BACK_BUTTON.checkForInput(SELECT_MOUSE_POS):
                     selecting = False
+                if CONTROLS_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    controls()
 
         pygame.display.update()
 
 def select_difficulty(grid_size, operation):
     selecting = True
     while selecting:
-        screen.fill(WHITE)  # Clear the screen
+        screen.fill((108, 3, 41))
         SELECT_MOUSE_POS = pygame.mouse.get_pos()
-        background_image = pygame.image.load(os.path.join("resources", "GAME BG.png")).convert_alpha()
-        screen.blit(background_image, (0, 0))  # Blit the background image onto the screen
-        TEXT = get_font(50, 1).render("SELECT DIFFICULTY", True, BLUE)
-        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 220))
+        TEXT = get_font(90, 3).render("Play Mode", True, (255, 248, 220))
+        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 120))  # Moved down by 50 pixels
         screen.blit(TEXT, TEXT_RECT)
+
+        # Render "Select here" text
+        SELECT_HERE_TEXT = get_font(40, 3).render("Select Difficulty", True, (247, 197, 102))
+        SELECT_HERE_RECT = SELECT_HERE_TEXT.get_rect(
+            center=(screen_width / 2, 200))  # Positioned below "Select Grid Size"
+        screen.blit(SELECT_HERE_TEXT, SELECT_HERE_RECT)
 
         EASY_BUTTON = Button(image=None, pos=(screen_width / 2, 300),
                              text_input="EASY", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
@@ -334,7 +389,7 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
                 screen.blit(text_surface, text_rect)
 
 
-        
+
 
 
 def start_solver(grid_size):
@@ -342,92 +397,80 @@ def start_solver(grid_size):
     screen = pygame.display.set_mode((1280, 720))
     screen_width, screen_height = screen.get_size()
     game_board = [[0] * grid_size for _ in range(grid_size)]
-    overall_grid_size = 600
+    overall_grid_size = 500
     cell_size = overall_grid_size // grid_size
     grid_width = overall_grid_size
     grid_height = overall_grid_size
-    grid_x = 100  
-    grid_y = (screen_height - grid_height) // 2
-    num_images = []
-    button_width = 30  
-    button_height = 30  
-
-    num_images = [pygame.image.load(f'resources/{i}.png') for i in range(1, grid_size + 1)]
-    button_size = 100  
+    grid_x = 100
+    grid_y = 160
+    button_size = 100
     button_spacing = 10
     button_x = screen_width - 150  # Adjust x position to align to the right with some margin
     button_y_start = 100  # Initial y position for the first button
-    button_x_spacing = 150  # Spacing between the control buttons
-    NEW_GAME_BUTTON = Button(image=new_game_img, pos=(button_x + button_x_spacing-400, button_y_start+520), text_input="", font=get_font(24, 1),
-                                base_color=BLUE, hovering_color=H_BLUE)
-    
-    SOLVE_BUTTON = Button(image=solve_img, pos=(button_x + button_x_spacing-190, button_y_start + 520), text_input="",
-                            font=get_font(24, 1),
-                            base_color=BLUE, hovering_color=H_BLUE)
-    
-    PLUS_BUTTON = Button(image=undo_img, pos=(button_x - 290, button_y_start + 1 * button_y_start - 10), text_input="",
-                            font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    button_x_spacing = 100  # Spacing between the control buttons
 
-    MINUS_BUTTON = Button(image=reset_img,
-                            pos=(button_x + button_x_spacing - 290, button_y_start + 1 * button_y_start - 10),
-                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
-    TIMES_BUTTON = Button(image=erase_img,
-                            pos=(button_x + 2 * button_x_spacing - 290, button_y_start +1  * button_y_start - 10),
-                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    
-    DIVIDE_BUTTON = Button(image=erase_img,
-                            pos=(button_x + 3 * button_x_spacing - 290, button_y_start +1  * button_y_start - 10),
-                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    
+    # Load images for numbers 0-9
+    num_images = [pygame.image.load(f'resources/{i}.png') for i in range(10)]
 
-    BACK_BUTTON = Button(image=back_img,
-                            pos=(40, 30),  # Adjust the values as needed for exact positioning
-                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    NEW_GAME_BUTTON = Button(image=new_game_img, pos=(button_x - 200, button_y_start + 330 + 100),
+                             text_input="", font=get_font(24, 1),
+                             base_color=BLUE, hovering_color=H_BLUE)
 
-    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON , DIVIDE_BUTTON]
+    SOLVE_BUTTON = Button(image=solve_img, pos=(button_x - 200, button_y_start + 520),
+                          text_input="",
+                          font=get_font(24, 1),
+                          base_color=BLUE, hovering_color=H_BLUE)
+
+    PLUS_BUTTON = Button(image=plus_img, pos=(button_x - 420, button_y_start + 80), text_input="",
+                         font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
+    MINUS_BUTTON = Button(image=minus_img,
+                          pos=(button_x + button_x_spacing - 410, button_y_start + 80),
+                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
+    TIMES_BUTTON = Button(image=multiplication_img,
+                          pos=(button_x + 2 * button_x_spacing - 400, button_y_start + 80),
+                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
+    DIVIDE_BUTTON = Button(image=division_img,
+                           pos=(button_x + 3 * button_x_spacing - 390, button_y_start + 80),
+                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    ERASE_BUTTON = Button(image=solver_erase_img,
+                          pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
+                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
+    BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
+                         text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    CONTROLS_BUTTON = Button(image=controls_img, pos=(
+    screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+
+    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON]
 
     num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
-    button_y_start = 400  # Adjust this value as needed
-    distance_from_bottom = 50  # Adjust this value as needed
+    button_y_start = 350  # Adjust this value as needed
     num_buttons = []
-    if grid_size == 3:
-        button_x_start = button_x - 250  # Start x position for the first button, moved 250 pixels to the left for a 3x3 grid
-    elif grid_size == 4:
-        button_x_start = button_x - 300  # Start x position for the first button, moved 300 pixels to the left for a 4x4 grid
-    elif grid_size == 6:
-        button_x_start = button_x - 250  # Start x position for the first button, moved 200 pixels to the left for a 6x6 grid
+    button_x_start = button_x - 420  # Start x position for the first button, moved 300 pixels to the left
 
-    if grid_size == 4:
-        for i in range(1, grid_size + 1):
-            button_x = button_x_start + (i - 1) * (button_size + button_spacing)  # Adjust x position
-            button_y = button_y_start + distance_from_bottom - 50  # Adjust y position
-            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))  # Resize image
-            num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
-                                        font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
-    else:  # Assume 6x6 grid or 3x3 grid
-        for i in range(1, grid_size + 1):
-            button_x = button_x_start + ((i - 1) % 3) * (button_size + button_spacing)  # Adjust x position
-            button_y = button_y_start + ((i - 1) // 3) * (button_size + button_spacing) - 50  # Adjust y position
-            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))  # Resize image
-            num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
-                                        font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
+    # Position buttons in a 5x2 grid layout for numbers 0-9
+    for i in range(10):
+        button_x = button_x_start + (i % 5) * (button_size + button_spacing)  # Adjust x position
+        button_y = button_y_start + (i // 5) * (button_size + button_spacing) - 50  # Adjust y position
+        resized_image = pygame.transform.scale(num_images[i], (button_size, button_size))  # Resize image
+        num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
+                                  font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
 
     move_history = []
     selected_group = None
     target_group = []
-    start_time = time.time()
-    elapsed_time = 0
-    current_sum = 0
     ken_solver = KenPuzzleMaker(grid_size)
     ken_solver.generate_empty_board()
 
     def init():
-        nonlocal move_history, selected_group, start_time, elapsed_time, target_group, ken_solver
+        nonlocal move_history, selected_group, target_group, ken_solver
         move_history = []
         selected_group = None
-        start_time = time.time()
-        elapsed_time = 0
         target_group = []
         ken_solver = KenPuzzleMaker(grid_size)
 
@@ -468,7 +511,7 @@ def start_solver(grid_size):
         return False
     
     while True:
-        screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
+        screen.fill((108, 3, 41))  # Fill the screen with black (you can change this color if needed)
         draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , ken_solver.solver_group)
 
         for button in control_buttons:
@@ -479,14 +522,7 @@ def start_solver(grid_size):
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
 
-        elapsed_time = time.time() - start_time
-        minutes = int(elapsed_time // 60)
-        seconds = int(elapsed_time % 60)
-        font = pygame.font.SysFont(None, 60)
-        timer_text = font.render(f" {minutes:02}:{seconds:02}", True, (255, 255, 255))
-        timer_text_rect = timer_text.get_rect()
-        timer_text_rect.topright = (screen_width - 40, 20)
-        screen.blit(timer_text, timer_text_rect)
+
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -565,6 +601,9 @@ def start_solver(grid_size):
                                 ken_solver.update_group(selected_group,total,op_clicked)
                         if BACK_BUTTON.rect.collidepoint(event.pos):
                             main()
+                        if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            controls()
+
                 elif event.button == 3:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height :
@@ -679,7 +718,7 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
             text_op = group[-2]
             sum_text = str(sum_value)
             combined_text = sum_text + text_op
-            font = pygame.font.Font(None, 36)
+            font = get_font(30, 3)
             text_surface = font.render(combined_text, True, (0, 0, 0))
 
             text_rect = text_surface.get_rect(
@@ -688,92 +727,91 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
 
             screen.blit(text_surface, text_rect)
 
+
 def start_game(grid_size, operation, difficulty):
     pygame.init()
     screen = pygame.display.set_mode((1280, 720))
     screen_width, screen_height = screen.get_size()
 
     # Generate the game board based on the selected grid size
-    # Store the initial state for the reset functionality
     game_board = [[0] * grid_size for _ in range(grid_size)]
-
     initial_board = [row[:] for row in game_board]
 
-    # Set the overall grid size to be consistent, e.g., 300x300 pixels
-    overall_grid_size = 600
+    # Set the overall grid size to be consistent, e.g., 500x500 pixels
+    overall_grid_size = 500
     cell_size = overall_grid_size // grid_size
-    grid_width = overall_grid_size
-    grid_height = overall_grid_size
-    grid_x = 100  # Set grid position to the left with a fixed margin
-    grid_y = (screen_height - grid_height) // 2
-
-    num_images = []
-    button_width = 30  # Define the width of the button
-    button_height = 30  # Define the height of the button
+    grid_x = 150  # Set grid position to the left with a fixed margin
+    grid_y = 160
 
     num_images = [pygame.image.load(f'resources/{i}.png') for i in range(1, grid_size + 1)]
-    # Define number buttons with images
-    button_size = 100  # Adjust button size to make it smaller
-    button_spacing = 10
+    button_size = 95  # Adjust button size to make it smaller
+    button_spacing = 25
 
     # Define additional buttons on the right side of the screen
     button_x = screen_width - 150  # Adjust x position to align to the right with some margin
-    button_y_start = 100  # Initial y position for the first button
-    button_x_spacing = 150  # Spacing between the control buttons
+    button_y_start = 0  # Initial y position for the first button
+    button_x_spacing = 100  # Spacing between the control buttons
 
-    # Define buttons for new game and solve separately
-    NEW_GAME_BUTTON = Button(image=new_game_img, pos=(button_x + button_x_spacing-400, button_y_start+520), text_input="", font=get_font(24, 1),
+    NEW_GAME_BUTTON = Button(image=new_game_img, pos=(button_x - 150, button_y_start + 520 + 100),
+                             text_input="", font=get_font(24, 1),
                              base_color=BLUE, hovering_color=H_BLUE)
 
-    # Adjust button_y_start to move the SOLVE_BUTTON a little bit below NEW_GAME_BUTTON
-    SOLVE_BUTTON = Button(image=solve_img, pos=(button_x + button_x_spacing-190, button_y_start + 520), text_input="",
-                          font=get_font(24, 1),
-                          base_color=BLUE, hovering_color=H_BLUE)
+    SOLVE_BUTTON = Button(image=solve_img, pos=(button_x - 150, button_y_start + 520),
+                          text_input="",
+                          font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
-    # Define additional buttons for undo, reset, and erase
-    UNDO_BUTTON = Button(image=undo_img, pos=(button_x - 290, button_y_start + 1 * button_y_start - 10), text_input="",
+    PENCIL_BUTTON = Button(image=pencil_img,
+                           pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
+                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    ERASE_BUTTON = Button(image=erase_img,
+                          pos=(button_x + button_x_spacing - 300, button_y_start + 1 * button_y_start + 200),
+                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    UNDO_BUTTON = Button(image=undo_img,
+                         pos=(button_x + 2 * button_x_spacing - 290, button_y_start + 1 * button_y_start + 200),
+                         text_input="",
                          font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     RESET_BUTTON = Button(image=reset_img,
-                          pos=(button_x + button_x_spacing - 290, button_y_start + 1 * button_y_start - 10),
+                          pos=(button_x + 3 * button_x_spacing - 280, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    ERASE_BUTTON = Button(image=erase_img,
-                          pos=(button_x + 2 * button_x_spacing - 290, button_y_start +1  * button_y_start - 10),
-                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    BACK_BUTTON = Button(image=back_img,
-                         pos=(40, 30),  # Adjust the values as needed for exact positioning
+
+    BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
-    # Combine all buttons into a list
-    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON]
+    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
+                       PENCIL_BUTTON]
 
-
-    # Calculate y position for the number buttons, starting below the last control button
-    num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
-
-    # Adjust button_y_start for number buttons
-    button_y_start = 400  # Adjust this value as needed
-    distance_from_bottom = 50  # Adjust this value as needed
+    num_buttons_start_y = button_y_start + 6 * button_spacing
+    button_y_start = 350
+    distance_from_bottom = 50
 
     num_buttons = []
-    if grid_size == 3:
-        button_x_start = button_x - 250  # Start x position for the first button, moved 250 pixels to the left for a 3x3 grid
-    elif grid_size == 4:
-        button_x_start = button_x - 300  # Start x position for the first button, moved 300 pixels to the left for a 4x4 grid
-    elif grid_size == 6:
-        button_x_start = button_x - 250  # Start x position for the first button, moved 200 pixels to the left for a 6x6 grid
 
-    if grid_size == 4:
+    if grid_size == 3:
+        button_x_start = button_x - 270
+    elif grid_size == 4:
+        button_x_start = button_x - 330
+    elif grid_size == 6:
+        button_x_start = button_x - 270
+
+    if grid_size == 3:
         for i in range(1, grid_size + 1):
-            button_x = button_x_start + (i - 1) * (button_size + button_spacing)  # Adjust x position
-            button_y = button_y_start + distance_from_bottom - 50  # Adjust y position
-            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))  # Resize image
+            button_x = button_x_start + ((i - 1) % 3) * (button_size + button_spacing)
+            button_y = button_y_start + ((i - 1) // 3) * (button_size + button_spacing) + 10
+            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))
             num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
                                       font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
-    else:  # Assume 6x6 grid or 3x3 grid
+    elif grid_size == 4:
         for i in range(1, grid_size + 1):
-            button_x = button_x_start + ((i - 1) % 3) * (button_size + button_spacing)  # Adjust x position
-            button_y = button_y_start + ((i - 1) // 3) * (button_size + button_spacing) - 50  # Adjust y position
-            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))  # Resize image
+            button_x = button_x_start + (i - 1) * (button_size + button_spacing)
+            button_y = button_y_start + distance_from_bottom - 50
+            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))
+            num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
+                                      font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
+    elif grid_size == 6:
+        for i in range(1, grid_size + 1):
+            button_x = button_x_start + ((i - 1) % 3) * (button_size + button_spacing)
+            button_y = button_y_start + ((i - 1) // 3) * (button_size + button_spacing) - 40
+            resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))
             num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
                                       font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
 
@@ -784,7 +822,7 @@ def start_game(grid_size, operation, difficulty):
     available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
 
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time ,available_cells
+        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells
         move_history = []
         selected_cell = None
         start_time = time.time()
@@ -792,11 +830,11 @@ def start_game(grid_size, operation, difficulty):
         available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
 
     # Placeholder loop to keep the screen open
-    board_answer,groups = generate_board(grid_size,operation)
+    board_answer, groups = generate_board(grid_size, operation)
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
-        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups , board_answer)
-        
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups,
+                       board_answer)
 
         # Render control buttons
         for button in control_buttons:
@@ -814,12 +852,19 @@ def start_game(grid_size, operation, difficulty):
         seconds = int(elapsed_time % 60)
 
         # Render timer text
-        font = pygame.font.SysFont(None, 60)
-        timer_text = font.render(f" {minutes:02}:{seconds:02}", True, (255, 255, 255))
+        font = get_font(45, 3)
+        timer_text = font.render(f"{minutes:02}:{seconds:02}", True, (247, 197, 102))
         timer_text_rect = timer_text.get_rect()
-        timer_text_rect.topright = (screen_width - 40, 20)
+        timer_text_rect.centerx = screen_width // 2  # Center horizontally
+        timer_text_rect.top = 85  # Positioned at the top
 
         screen.blit(timer_text, timer_text_rect)
+
+        # Render difficulty text
+        difficulty_font = get_font(70, 3)
+        difficulty_text = difficulty_font.render(difficulty, True, (255, 248, 220))
+        difficulty_text_rect = difficulty_text.get_rect(center=(screen_width / 2, 60))
+        screen.blit(difficulty_text, difficulty_text_rect)
 
         pygame.display.update()
 
@@ -829,53 +874,44 @@ def start_game(grid_size, operation, difficulty):
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                # Check if the click is within the grid boundaries
-                if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
-                    # Calculate the cell index based on the mouse position
+                if grid_x <= mouse_x < grid_x + overall_grid_size and grid_y <= mouse_y < grid_y + overall_grid_size:
                     cell_x = (mouse_x - grid_x) // cell_size
                     cell_y = (mouse_y - grid_y) // cell_size
                     selected_cell = (cell_x, cell_y)
                 else:
-                    # Check if any number button is clicked
                     for i, button in enumerate(num_buttons):
                         if button.checkForInput((mouse_x, mouse_y)):
                             if selected_cell:
-                                # Update the value of the selected cell with the clicked number
                                 previous_value = game_board[selected_cell[1]][selected_cell[0]]
                                 move_history.append((selected_cell, previous_value))
                                 game_board[selected_cell[1]][selected_cell[0]] = i + 1
-                    # Check if additional buttons are clicked
                     if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        board_answer,groups = generate_board(grid_size,operation)
+                        board_answer, groups = generate_board(grid_size, operation)
                         game_board = [row[:] for row in initial_board]
                         init()
                     if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if selected_cell:
                             for i in range(grid_size):
                                 for j in range(grid_size):
-                                    if selected_cell == (j,i):
+                                    if selected_cell == (j, i):
                                         game_board[i][j] = board_answer[i][j]
                                         available_cells.remove(selected_cell)
-
                         else:
                             if available_cells:
                                 random_cell = random.choice(tuple(available_cells))
                                 available_cells.remove(random_cell)
-                                print("random: ",random_cell)
                             for i in range(grid_size):
                                 for j in range(grid_size):
-                                    if random_cell == (j,i):
+                                    if random_cell == (j, i):
                                         game_board[i][j] = board_answer[i][j]
                         selected_cell = None
-
-
                     if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if move_history:
                             last_move = move_history.pop()
                             selected_cell, previous_value = last_move
                             game_board[selected_cell[1]][selected_cell[0]] = previous_value
                     if RESET_BUTTON.checkForInput((mouse_x, mouse_y)):
-                        game_board = [row[:] for row in initial_board]  # Reset to the initial state
+                        game_board = [row[:] for row in initial_board]
                     if BACK_BUTTON.rect.collidepoint(event.pos):
                         main()
                     if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
@@ -886,11 +922,9 @@ def start_game(grid_size, operation, difficulty):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                     if selected_cell:
-                        # Clear the value of the selected cell
                         previous_value = game_board[selected_cell[1]][selected_cell[0]]
                         move_history.append((selected_cell, previous_value))
                         game_board[selected_cell[1]][selected_cell[0]] = 0
-
 
 
 def generate_board(grid_size,operation):
@@ -927,6 +961,77 @@ def generate_board(grid_size,operation):
     return board,updated_groups
 
 
+music_playing = True
+
+def startpage(screen):
+    while True:
+        screen.fill((108, 3, 41))  # Fill screen with black color
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+
+        # Calculate the positions of buttons to center them
+        button_width = 200  # Assuming button width
+        button_height = 50  # Assuming button height
+        start_button_x = (screen_width - button_width) // 2 + 90  # Adjusted to move slightly to the right
+        start_button_y = screen_height // 2 + 170  # Moved slightly below the original position
+        exit_button_x = (screen_width - button_width) // 2 + 90  # Adjusted to move slightly to the right
+        exit_button_y = screen_height // 2 + 250  # Moved slightly below the original position
+
+        # Add the controls button
+        controls_button_x = screen_width - controls_img.get_width() - 20
+        controls_button_y = screen_height - controls_img.get_height() - 20
+        music_button_x = screen_width - music_img.get_width() - 20  # Adjusted to not overlap with controls button
+        music_button_y = screen_height - music_img.get_height() - 70
+
+        START_BUTTON = Button(image=start_border, pos=(start_button_x, start_button_y),
+                              text_input="START", font=get_font(35, 3), base_color="#FFF8DC", hovering_color="#FFF8DC")
+        EXIT_BUTTON = Button(image=exit_border, pos=(exit_button_x, exit_button_y),
+                             text_input="Exit", font=get_font(30, 3), base_color="#000000", hovering_color="#000000")
+        CONTROLS_BUTTON = Button(image=controls_img, pos=(controls_button_x, controls_button_y),
+                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        if music_playing:
+            MUSIC_BUTTON = Button(image=music_img, pos=(music_button_x, music_button_y),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        else:
+            MUSIC_BUTTON = Button(image=mute_img, pos=(music_button_x, music_button_y),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+
+        START_BUTTON.changeColor(MENU_MOUSE_POS)
+        EXIT_BUTTON.changeColor(MENU_MOUSE_POS)
+        CONTROLS_BUTTON.changeColor(MENU_MOUSE_POS)
+        MUSIC_BUTTON.changeColor(MENU_MOUSE_POS)  # Add this line to change color when hovering
+
+        START_BUTTON.update(screen)
+        EXIT_BUTTON.update(screen)
+        CONTROLS_BUTTON.update(screen)
+        MUSIC_BUTTON.update(screen)  # Add this line to update the music button
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if START_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    return  # Exit the start screen loop and go to the main menu
+                if CONTROLS_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    controls()
+                if MUSIC_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    toggle_music()  # Call the toggle_music function when music button is clicked
+                if EXIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    pygame.quit()
+                    sys.exit()
+
+        pygame.display.update()
+
+def toggle_music():
+    global music_playing
+    if music_playing:
+        pygame.mixer.music.pause()
+        music_playing = False
+    else:
+        pygame.mixer.music.unpause()
+        music_playing = True
+
+
 def main():
     # Initialize pygame
     pygame.init()
@@ -936,22 +1041,55 @@ def main():
 
     # Play the music on loop (-1 means infinite loop)
     pygame.mixer.music.play(-1)
-
+    startpage(screen)
     # Other initialization code
     running = True
-    while running:
-        screen.blit(background_image, (0, 0))
-        MENU_MOUSE_POS = pygame.mouse.get_pos()
-        PLAY_BUTTON = Button(image=None, pos=(960, 350),
-                             text_input="PLAY GAME", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        SOLVER_BUTTON = Button(image=None, pos=(960, 430),
-                               text_input="SOLVER", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        CONTROLS_BUTTON = Button(image=None, pos=(960, 510),
-                                 text_input="CONTROLS", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        QUIT_BUTTON = Button(image=None, pos=(960, 590),
-                             text_input="QUIT GAME", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-        for button in [PLAY_BUTTON, SOLVER_BUTTON, CONTROLS_BUTTON, QUIT_BUTTON]:
+    # Calculate horizontal center
+    screen_center_x = screen.get_width() // 2
+
+    # Define button positions
+    button_y = 400  # Adjust as needed
+    button_spacing = 20  # Adjust as needed
+
+    # Define top text position
+    top_text_y = 100  # Adjust as needed
+
+    while running:
+        screen.fill((108, 3, 41))  # Fill screen with black color
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+
+        # Define button positions centered horizontally
+        button_width = playgame_img.get_width()  # Assuming playgame_img is loaded
+        button_start_x = screen_center_x - button_width // 2
+        button_offset = button_width + button_spacing
+
+        # Render the text "Select game mode"
+        text_surface = get_font(50, 3).render("Select Game Mode", True, (247, 197, 102))  # F7C566 color
+
+        # Calculate the position of the text to be at the top center of the screen
+        text_x = screen_center_x - text_surface.get_width() // 2
+
+        # Blit the text onto the screen
+        screen.blit(text_surface, (text_x, top_text_y))
+        music_button_x = screen_width - music_img.get_width() - 20  # Adjusted to not overlap with controls button
+        music_button_y = screen_height - music_img.get_height() - 70
+        PLAY_BUTTON = Button(image=playgame_img, pos=(button_start_x, button_y),
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        SOLVER_BUTTON = Button(image=solver_img, pos=(button_start_x + button_offset, button_y),
+                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        CONTROLS_BUTTON = Button(image=controls_img, pos=(screen.get_width() - controls_img.get_width() - 20, screen.get_height() - controls_img.get_height() - 20),
+                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        BACK_BUTTON = Button(image=back_img, pos=(screen.get_width() - back_img.get_width() + 10, 50),  # Adjusted x-coordinate
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        if music_playing:
+            MUSIC_BUTTON = Button(image=music_img, pos=(music_button_x, music_button_y),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        else:
+            MUSIC_BUTTON = Button(image=mute_img, pos=(music_button_x, music_button_y),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+
+        for button in [PLAY_BUTTON, SOLVER_BUTTON, CONTROLS_BUTTON, BACK_BUTTON, MUSIC_BUTTON]:
             button.changeColor(MENU_MOUSE_POS)
             button.update(screen)
 
@@ -971,13 +1109,15 @@ def main():
                     solve_puzzle()  # Solve the puzzle directly
                 if CONTROLS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     controls()
-                if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    pygame.quit()
-                    sys.exit()
+                if BACK_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    startpage(screen)
+                if MUSIC_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    toggle_music()  # Call the toggle_music function when music button is clicked
 
         pygame.display.update()
-def solve_puzzle():
-        pygame.display.flip()
+
+
+
 def controls():
     # Controls screen code
     controls_bg = pygame.image.load("resources/CONTROLS.png")
@@ -1001,6 +1141,9 @@ def controls():
                     return  # Return to the main loop
 
         pygame.display.flip()
+def solve_puzzle():
+        pygame.display.flip()
+
 
 
 #play_intro_video()
