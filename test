@@ -1,16 +1,1 @@
- music_button_x = screen_width - music_img.get_width() - 20  # Adjusted to not overlap with controls button
-        music_button_y = screen_height - music_img.get_height() - 70
-        if music_playing:
-            MUSIC_BUTTON = Button(image=music_img, pos=(music_button_x, music_button_y),
-                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        else:
-            MUSIC_BUTTON = Button(image=mute_img, pos=(music_button_x, music_button_y),
-                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-
-                                    MUSIC_BUTTON.changeColor(MENU_MOUSE_POS)  # Add this line to change color when hovering
-                                      MUSIC_BUTTON.update(screen)  # Add this line to update the music button
-
-
-                                       if MUSIC_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    toggle_music()  # Call the toggle_music function when music button is clicked
