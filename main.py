@@ -8,6 +8,7 @@ from backend import KenPuzzleMaker
 from backend import KenAiSolver
 from button import Button
 import random
+from PIL import Image
 
 pygame.init()
 
@@ -25,7 +26,6 @@ screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Load images
-background_image = pygame.image.load("resources/MENU.png")
 game_bg_image = pygame.image.load("resources/GAME BG.png")
 grid_3x3_image = pygame.image.load("resources/3x3.png")
 grid_4x4_image = pygame.image.load("resources/4x4.png")
@@ -55,6 +55,9 @@ division_img = pygame.image.load('resources/division.png')
 solver_erase_img = pygame.image.load('resources/solver_erase.png')
 music_img = pygame.image.load('resources/music.png')
 mute_img = pygame.image.load('resources/mute.png')
+easy_img = pygame.image.load('resources/easy.png')
+medium_img = pygame.image.load('resources/medium.png')
+hard_img = pygame.image.load('resources/hard.png')
 
 
 # Scale the 3x3 image
@@ -86,6 +89,9 @@ division_img = pygame.transform.scale(division_img, (90, 90))
 solver_erase_img = pygame.transform.scale(solver_erase_img, (90, 90))
 music_img = pygame.transform.scale(music_img, (70, 40))
 mute_img = pygame.transform.scale(mute_img, (70, 40))
+easy_img = pygame.transform.scale(easy_img, (250, 100))
+medium_img = pygame.transform.scale(medium_img, (250, 100))
+hard_img = pygame.transform.scale(hard_img, (250, 100))
 pygame.display.set_caption("KenKen Puzzle")
 
 
@@ -166,11 +172,17 @@ def select_grid_size(play):
         BACK_BUTTON = Button(image=back_img, pos=(screen.get_width() - back_img.get_width() + 10, 50),
                              # Adjusted x-coordinate
                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        CONTROLS_BUTTON = Button(image=controls_img, pos=(
-            screen_width - controls_img.get_width() - 20, screen_height - controls_img.get_height() - 20),
+        CONTROLS_BUTTON = Button(image=controls_img, pos=( screen_width - controls_img.get_width() - 20, screen_height - controls_img.get_height() - 20),
                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        if music_playing:
+            MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 10, 610),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+        else:
+            MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 10, 610),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
-        for button in [GRID_3x3_BUTTON, GRID_4x4_BUTTON, GRID_6x6_BUTTON, BACK_BUTTON, CONTROLS_BUTTON]:
+
+        for button in [GRID_3x3_BUTTON, GRID_4x4_BUTTON, GRID_6x6_BUTTON, BACK_BUTTON, MUSIC_BUTTON,CONTROLS_BUTTON]:
             button.changeColor(SELECT_MOUSE_POS)
             button.update(screen)
 
@@ -194,12 +206,15 @@ def select_grid_size(play):
                         select_operations(6)
                     else:
                         start_solver(6)
-                if BACK_BUTTON.checkForInput(SELECT_MOUSE_POS):
-                    main()
                 if CONTROLS_BUTTON.checkForInput(SELECT_MOUSE_POS):
                     controls()
+                if BACK_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    main_menu()
+                if MUSIC_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    toggle_music()
 
         pygame.display.update()
+
 
 
 def select_operations(grid_size):
@@ -249,8 +264,15 @@ def select_operations(grid_size):
             screen_width - controls_img.get_width() - 20, screen_height - controls_img.get_height() - 20),
                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
+        if music_playing:
+            MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 10, 610),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+        else:
+            MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 10, 610),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+
         for button in [PLUS_BUTTON, PLUS_MINUS_BUTTON, MULTIPLY_DIVIDE_BUTTON, PLUS_MINUS_MULTIPLY_BUTTON,
-                       RANDOM_BUTTON, BACK_BUTTON, CONTROLS_BUTTON]:
+                       RANDOM_BUTTON, BACK_BUTTON, CONTROLS_BUTTON,MUSIC_BUTTON]:
             button.changeColor(SELECT_MOUSE_POS)
             button.update(screen)
 
@@ -273,6 +295,8 @@ def select_operations(grid_size):
                     selecting = False
                 if CONTROLS_BUTTON.checkForInput(SELECT_MOUSE_POS):
                     controls()
+                if MUSIC_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    toggle_music()
 
         pygame.display.update()
 
@@ -282,25 +306,39 @@ def select_difficulty(grid_size, operation):
         screen.fill((108, 3, 41))
         SELECT_MOUSE_POS = pygame.mouse.get_pos()
         TEXT = get_font(90, 3).render("Play Mode", True, (255, 248, 220))
-        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 120))  # Moved down by 50 pixels
+        TEXT_RECT = TEXT.get_rect(center=(screen_width / 2, 150))
         screen.blit(TEXT, TEXT_RECT)
 
         # Render "Select here" text
         SELECT_HERE_TEXT = get_font(40, 3).render("Select Difficulty", True, (247, 197, 102))
-        SELECT_HERE_RECT = SELECT_HERE_TEXT.get_rect(
-            center=(screen_width / 2, 200))  # Positioned below "Select Grid Size"
+        SELECT_HERE_RECT = SELECT_HERE_TEXT.get_rect(center=(screen_width / 2, 230))
         screen.blit(SELECT_HERE_TEXT, SELECT_HERE_RECT)
 
-        EASY_BUTTON = Button(image=None, pos=(screen_width / 2, 300),
-                             text_input="EASY", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        MEDIUM_BUTTON = Button(image=None, pos=(screen_width / 2, 400),
-                               text_input="MEDIUM", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        HARD_BUTTON = Button(image=None, pos=(screen_width / 2, 500),
-                             text_input="HARD", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
-        BACK_BUTTON = Button(image=None, pos=(screen_width / 2, 600),
-                             text_input="BACK", font=get_font(68, 1), base_color=BLUE, hovering_color=H_BLUE)
+        # Adjust the positions to be horizontal
+        button_y_position = 400  # Common y position for all difficulty buttons
+        horizontal_spacing = 200  # Space between each button
 
-        for button in [EASY_BUTTON, MEDIUM_BUTTON, HARD_BUTTON, BACK_BUTTON]:
+        EASY_BUTTON = Button(image=easy_img, pos=(screen_width / 2 - 1.5 * horizontal_spacing, button_y_position),
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        MEDIUM_BUTTON = Button(image=medium_img, pos=(screen_width / 2, button_y_position),
+                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        HARD_BUTTON = Button(image=hard_img, pos=(screen_width / 2 + 1.5 * horizontal_spacing, button_y_position),
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        BACK_BUTTON = Button(image=back_img, pos=(screen.get_width() - back_img.get_width() + 10, 50),
+                             # Adjusted x-coordinate
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+        CONTROLS_BUTTON = Button(image=controls_img, pos=(
+            screen_width - controls_img.get_width() - 20, screen_height - controls_img.get_height() - 20),
+                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+
+        if music_playing:
+            MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 10, 610),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+        else:
+            MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 10, 610),
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+
+        for button in [EASY_BUTTON, MEDIUM_BUTTON, HARD_BUTTON, BACK_BUTTON,MUSIC_BUTTON,CONTROLS_BUTTON]:
             button.changeColor(SELECT_MOUSE_POS)
             button.update(screen)
 
@@ -317,8 +355,13 @@ def select_difficulty(grid_size, operation):
                     start_game(grid_size, operation, "HARD")
                 if BACK_BUTTON.checkForInput(SELECT_MOUSE_POS):
                     selecting = False
+                if CONTROLS_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    controls()
+                if MUSIC_BUTTON.checkForInput(SELECT_MOUSE_POS):
+                    toggle_music()
 
         pygame.display.update()
+
 
 
 def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , groups):
@@ -446,8 +489,14 @@ def start_solver(grid_size):
     screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON]
+    if music_playing:
+        MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+    else:
+        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
+    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON,MUSIC_BUTTON]
     num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
     button_y_start = 350  # Adjust this value as needed
     num_buttons = []
@@ -521,8 +570,6 @@ def start_solver(grid_size):
         for button in num_buttons:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
-
-
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -532,7 +579,6 @@ def start_solver(grid_size):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Left click
                     mouse_x, mouse_y = pygame.mouse.get_pos()
-
                     if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
                         cell_x = (mouse_x - grid_x) // cell_size
                         cell_y = (mouse_y - grid_y) // cell_size
@@ -558,7 +604,8 @@ def start_solver(grid_size):
                         if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
                             solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
                             game_board = solution_board
-
+                        if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                            toggle_music()
                         if PLUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked1")
                             if selected_group:
@@ -600,7 +647,7 @@ def start_solver(grid_size):
                                 print("total: ",total)
                                 ken_solver.update_group(selected_group,total,op_clicked)
                         if BACK_BUTTON.rect.collidepoint(event.pos):
-                            main()
+                            main_menu()
                         if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             controls()
 
@@ -641,7 +688,6 @@ def start_solver(grid_size):
                         ken_solver.add_group(target_group)
                         print("SAVED")
                         target_group = []
-
 def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board, target_group, selected_group):
     def draw_update(game_board):
         # This function updates the display with the current board state
@@ -776,9 +822,19 @@ def start_game(grid_size, operation, difficulty):
 
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    CONTROLS_BUTTON = Button(image=controls_img, pos=(
+        screen.get_width() - back_img.get_width() + 55, 690),
+                             text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+
+    if music_playing:
+        MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+    else:
+        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 620),
+                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
-                       PENCIL_BUTTON]
+                       PENCIL_BUTTON,CONTROLS_BUTTON,MUSIC_BUTTON]
 
     num_buttons_start_y = button_y_start + 6 * button_spacing
     button_y_start = 350
@@ -810,7 +866,7 @@ def start_game(grid_size, operation, difficulty):
     elif grid_size == 6:
         for i in range(1, grid_size + 1):
             button_x = button_x_start + ((i - 1) % 3) * (button_size + button_spacing)
-            button_y = button_y_start + ((i - 1) // 3) * (button_size + button_spacing) - 40
+            button_y = button_y_start + ((i - 1) // 3) * (button_size + button_spacing) - 50
             resized_image = pygame.transform.scale(num_images[i - 1], (button_size, button_size))
             num_buttons.append(Button(image=resized_image, pos=(button_x, button_y), text_input="",
                                       font=get_font(24, 1), base_color="#D32735", hovering_color=RED))
@@ -913,18 +969,23 @@ def start_game(grid_size, operation, difficulty):
                     if RESET_BUTTON.checkForInput((mouse_x, mouse_y)):
                         game_board = [row[:] for row in initial_board]
                     if BACK_BUTTON.rect.collidepoint(event.pos):
-                        main()
+                        main_menu()
                     if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if selected_cell:
                             previous_value = game_board[selected_cell[1]][selected_cell[0]]
                             move_history.append((selected_cell, previous_value))
                             game_board[selected_cell[1]][selected_cell[0]] = 0
+                    if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
+                        controls()
+                    if MUSIC_BUTTON.checkForInput((mouse_x, mouse_y)):
+                        toggle_music()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                     if selected_cell:
                         previous_value = game_board[selected_cell[1]][selected_cell[0]]
                         move_history.append((selected_cell, previous_value))
                         game_board[selected_cell[1]][selected_cell[0]] = 0
+
 
 
 def generate_board(grid_size,operation):
@@ -962,24 +1023,57 @@ def generate_board(grid_size,operation):
 
 
 music_playing = True
+def load_gif_frames(gif_path):
+    gif = Image.open(gif_path)
+    frames = []
+    try:
+        while True:
+            frame = gif.copy()
+            frame = frame.convert('RGBA')
+            frames.append(pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode))
+            gif.seek(gif.tell() + 1)
+    except EOFError:
+        pass
+    return frames
 
-def startpage(screen):
+gif_frames = load_gif_frames("resources/startbg.gif")
+gif_frame_count = len(gif_frames)
+gif_frame_index = 0
+gif_direction = 1
+# Set GIF frame delay (in milliseconds)
+gif_delay = 150  # Adjust this value to make the GIF slower or faster
+clock = pygame.time.Clock()
+
+
+# Define screen dimensions
+screen = pygame.display.set_mode((screen_width, screen_height))
+
+def main():
+    global gif_frame_index, gif_direction
     while True:
-        screen.fill((108, 3, 41))  # Fill screen with black color
+        # Cycle through GIF frames
+        screen.blit(gif_frames[gif_frame_index], (0, 0))
+
+        # Update frame index for bidirectional looping
+        gif_frame_index += gif_direction
+        if gif_frame_index == gif_frame_count - 1 or gif_frame_index == 0:
+            gif_direction *= -1  # Reverse direction at the ends
+
+        # Delay to control the speed of the GIF
+        clock.tick(1000 // gif_delay)
+
         MENU_MOUSE_POS = pygame.mouse.get_pos()
 
         # Calculate the positions of buttons to center them
-        button_width = 200  # Assuming button width
-        button_height = 50  # Assuming button height
-        start_button_x = (screen_width - button_width) // 2 + 90  # Adjusted to move slightly to the right
-        start_button_y = screen_height // 2 + 170  # Moved slightly below the original position
-        exit_button_x = (screen_width - button_width) // 2 + 90  # Adjusted to move slightly to the right
-        exit_button_y = screen_height // 2 + 250  # Moved slightly below the original position
-
-        # Add the controls button
+        button_width = 200
+        button_height = 50
+        start_button_x = (screen_width - button_width) // 2 + 90
+        start_button_y = screen_height // 2 + 190
+        exit_button_x = (screen_width - button_width) // 2 + 90
+        exit_button_y = screen_height // 2 + 270
         controls_button_x = screen_width - controls_img.get_width() - 20
         controls_button_y = screen_height - controls_img.get_height() - 20
-        music_button_x = screen_width - music_img.get_width() - 20  # Adjusted to not overlap with controls button
+        music_button_x = screen_width - music_img.get_width() - 20
         music_button_y = screen_height - music_img.get_height() - 70
 
         START_BUTTON = Button(image=start_border, pos=(start_button_x, start_button_y),
@@ -987,23 +1081,23 @@ def startpage(screen):
         EXIT_BUTTON = Button(image=exit_border, pos=(exit_button_x, exit_button_y),
                              text_input="Exit", font=get_font(30, 3), base_color="#000000", hovering_color="#000000")
         CONTROLS_BUTTON = Button(image=controls_img, pos=(controls_button_x, controls_button_y),
-                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+                                 text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
         if music_playing:
             MUSIC_BUTTON = Button(image=music_img, pos=(music_button_x, music_button_y),
-                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
         else:
             MUSIC_BUTTON = Button(image=mute_img, pos=(music_button_x, music_button_y),
-                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
+                                  text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
         START_BUTTON.changeColor(MENU_MOUSE_POS)
         EXIT_BUTTON.changeColor(MENU_MOUSE_POS)
         CONTROLS_BUTTON.changeColor(MENU_MOUSE_POS)
-        MUSIC_BUTTON.changeColor(MENU_MOUSE_POS)  # Add this line to change color when hovering
+        MUSIC_BUTTON.changeColor(MENU_MOUSE_POS)
 
         START_BUTTON.update(screen)
         EXIT_BUTTON.update(screen)
         CONTROLS_BUTTON.update(screen)
-        MUSIC_BUTTON.update(screen)  # Add this line to update the music button
+        MUSIC_BUTTON.update(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1011,37 +1105,43 @@ def startpage(screen):
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if START_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    return  # Exit the start screen loop and go to the main menu
+                    return
                 if CONTROLS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     controls()
                 if MUSIC_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    toggle_music()  # Call the toggle_music function when music button is clicked
+                    toggle_music()
                 if EXIT_BUTTON.checkForInput(MENU_MOUSE_POS):
                     pygame.quit()
                     sys.exit()
 
         pygame.display.update()
 
+
+import pygame.mixer
+
+pygame.mixer.init()
+
+# Variable to track music state
+music_playing = False
+
 def toggle_music():
     global music_playing
-    if music_playing:
-        pygame.mixer.music.pause()
-        music_playing = False
+    if not music_playing:
+        # Load the background music
+        pygame.mixer.music.load("resources/BG MUSIC.mp3")
+
+        # Play the music on loop (-1 means infinite loop)
+        pygame.mixer.music.play(-1)
     else:
-        pygame.mixer.music.unpause()
-        music_playing = True
+        pygame.mixer.music.pause() if music_playing else pygame.mixer.music.unpause()
+    music_playing = not music_playing
 
 
-def main():
+
+def main_menu():
     # Initialize pygame
     pygame.init()
-
-    # Load the background music
-    pygame.mixer.music.load("resources/BG MUSIC.mp3")
-
-    # Play the music on loop (-1 means infinite loop)
-    pygame.mixer.music.play(-1)
-    startpage(screen)
+    main()
     # Other initialization code
     running = True
 
@@ -1110,7 +1210,7 @@ def main():
                 if CONTROLS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     controls()
                 if BACK_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    startpage(screen)
+                    main_menu()
                 if MUSIC_BUTTON.checkForInput(MENU_MOUSE_POS):
                     toggle_music()  # Call the toggle_music function when music button is clicked
 
@@ -1147,4 +1247,6 @@ def solve_puzzle():
 
 
 #play_intro_video()
-main()
+# Call toggle_music() once to start playing music by default
+toggle_music()
+main_menu()
