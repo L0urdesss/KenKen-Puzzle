@@ -591,7 +591,7 @@ def start_solver(grid_size):
                         for i, button in enumerate(num_buttons):
                             if button.checkForInput((mouse_x, mouse_y)):
                                 if selected_group:
-                                    num_clicked = i + 1
+                                    num_clicked = i
                                     current_sum = current_sum * 10 + num_clicked
                                     print(current_sum)
                                     curr_group = ken_solver.findGroup(selected_group)
@@ -693,7 +693,7 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
         # This function updates the display with the current board state
         draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group, puzzle)
         pygame.display.update()
-        time.sleep(0.5)  # Adjust the delay as needed to visualize the steps
+        # time.sleep(0.2)  # Adjust the delay as needed to visualize the steps
 
 
     # Initial drawing of the puzzle
