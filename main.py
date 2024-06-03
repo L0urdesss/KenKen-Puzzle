@@ -704,7 +704,7 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
     
     return solution_board
 
-def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer):
+def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks):
     for i in range(grid_size):
         for j in range(grid_size):
             cell_x = grid_x + j * cell_size
@@ -736,6 +736,16 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
                 text = font.render(str(cell_value), True, (0, 0, 0))  # Text color (black)
                 text_rect = text.get_rect(center=(cell_x + cell_size // 2, cell_y + cell_size // 2))
                 screen.blit(text, text_rect)
+            else:
+                # Render penciled-in numbers
+                penciled_nums = pencil_marks[i][j]
+                if penciled_nums:
+                    font = pygame.font.SysFont(None, 20)
+                    for n in penciled_nums:
+                        text = font.render(str(n), True, (0, 0, 0))
+                        text_rect = text.get_rect(center=(cell_x + (n-1) % 3 * (cell_size // 3 -5) + cell_size // 6 + 5, cell_y + (n-1) // 3 * (cell_size // 3 -5) + cell_size // 6 + 23))
+                        screen.blit(text, text_rect)
+
 
     for group in groups:
         for i, j in group[:-2]:
@@ -876,21 +886,26 @@ def start_game(grid_size, operation, difficulty):
     start_time = time.time()
     elapsed_time = 0
     available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
+    pencil_mode = False
+    # pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
+    pencil_marks = [[set(range(1, grid_size + 1)) for _ in range(grid_size)] for _ in range(grid_size)]
 
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells
+        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks
         move_history = []
         selected_cell = None
         start_time = time.time()
         elapsed_time = 0
         available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
+        pencil_mode = False
+        pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
 
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
     while True:
         screen.fill((108, 3, 32))  # Fill the screen with black (you can change this color if needed)
         draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups,
-                       board_answer)
+                       board_answer, pencil_marks)
 
         # Render control buttons
         for button in control_buttons:
@@ -938,9 +953,43 @@ def start_game(grid_size, operation, difficulty):
                     for i, button in enumerate(num_buttons):
                         if button.checkForInput((mouse_x, mouse_y)):
                             if selected_cell:
-                                previous_value = game_board[selected_cell[1]][selected_cell[0]]
-                                move_history.append((selected_cell, previous_value))
-                                game_board[selected_cell[1]][selected_cell[0]] = i + 1
+                                if pencil_mode:
+                                    if (i + 1) in pencil_marks[selected_cell[1]][selected_cell[0]]:
+                                        pencil_marks[selected_cell[1]][selected_cell[0]].remove(i + 1)
+                                    else:
+                                        pencil_marks[selected_cell[1]][selected_cell[0]].add(i + 1)
+                                else:
+                                    previous_value = game_board[selected_cell[1]][selected_cell[0]]
+                                    move_history.append((selected_cell, previous_value))
+                                    game_board[selected_cell[1]][selected_cell[0]] = i + 1
+                                    if (game_board[selected_cell[1]][selected_cell[0]] == board_answer[selected_cell[1]][selected_cell[0]]):
+                                        print("correct")
+                                        value = i + 1
+
+                                        # Remove the value from the pencil marks in the same row and column
+                                        for x in range(grid_size):
+                                            if value in pencil_marks[selected_cell[1]][x]:
+                                                pencil_marks[selected_cell[1]][x].remove(value)
+                                            if value in pencil_marks[x][selected_cell[0]]:
+                                                pencil_marks[x][selected_cell[0]].remove(value)
+
+                                        # Determine sub-grid size
+                                        if grid_size == 3:
+                                            sub_grid_width = sub_grid_height = 3
+                                        elif grid_size == 4:
+                                            sub_grid_width = sub_grid_height = 2
+                                        elif grid_size == 6:
+                                            sub_grid_width, sub_grid_height = 3, 2
+
+                                        # Calculate sub-grid starting coordinates
+                                        sub_grid_x = (selected_cell[0] // sub_grid_width) * sub_grid_width
+                                        sub_grid_y = (selected_cell[1] // sub_grid_height) * sub_grid_height
+
+                                        # Remove the value from the pencil marks in the same sub-grid
+                                        for y in range(sub_grid_y, sub_grid_y + sub_grid_height):
+                                            for x in range(sub_grid_x, sub_grid_x + sub_grid_width):
+                                                if value in pencil_marks[y][x]:
+                                                    pencil_marks[y][x].remove(value)
                     if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
                         board_answer, groups = generate_board(grid_size, operation)
                         game_board = [row[:] for row in initial_board]
@@ -979,6 +1028,8 @@ def start_game(grid_size, operation, difficulty):
                         controls()
                     if MUSIC_BUTTON.checkForInput((mouse_x, mouse_y)):
                         toggle_music()
+                    if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
+                        pencil_mode = not pencil_mode
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                     if selected_cell:
@@ -1248,5 +1299,5 @@ def solve_puzzle():
 
 #play_intro_video()
 # Call toggle_music() once to start playing music by default
-toggle_music()
+# toggle_music()
 main_menu()

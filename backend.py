@@ -365,7 +365,7 @@ class KenAiSolver:
             for num in range(1, size + 1):
                 if is_safe(board, row, col, num):
                     board[row][col] = num
-                    self.draw_update(board)
+                    # self.draw_update(board)
                     if is_valid(board, groups):
                         result = backjumping(board, groups, next_row, next_col, conflicts)
                         if result:
