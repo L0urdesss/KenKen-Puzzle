@@ -1335,8 +1335,8 @@ def controls():
 
     while True:
         CONTROLS_MOUSE = pygame.mouse.get_pos()
-        BACK_BUTTON = Button(image=None, pos=(1160, 650),
-                             text_input="BACK", font=get_font(50, 1), base_color="#D32735", hovering_color=RED)
+        BACK_BUTTON = Button(image=back_img, pos=(1160, 650),
+                             text_input="", font=get_font(50, 1), base_color="#D32735", hovering_color=RED)
 
         for button in [BACK_BUTTON]:
             button.changeColor(CONTROLS_MOUSE)
