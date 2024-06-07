@@ -240,6 +240,7 @@ class KenPuzzleMaker:
 
     def findGroup(self, target_group):
         print("target inside find: ", target_group)
+        print("group self: ",self.solver_group)
         for item in self.solver_group:
             print("Current item:", item)
             print("itemchecked: ",item[:-2])
@@ -247,8 +248,68 @@ class KenPuzzleMaker:
                 print("FOUND")
                 return item
         return None
-
     
+    def generate_tuples(self,grid_size):
+        return [(i, j) for i in range(grid_size) for j in range(grid_size)]
+
+    def check_tuples_in_group(self, grid_size, puzzle):
+        # Generate all tuples for the given grid size
+        required_tuples = self.generate_tuples(grid_size)
+        
+        # Initialize a set to keep track of missing tuples
+        missing_tuples = set()
+        
+        # Iterate over each required tuple
+        for item in required_tuples:
+            found = False
+            # Check if the tuple is present in any of the sub-arrays
+            for sub_array in puzzle:
+                if item in sub_array:
+                    found = True
+                    # Check if the sub-array has more than one tuple
+                    if sum(isinstance(i, tuple) for i in sub_array) > 1:
+                        # If it has more than one tuple, check both conditions
+                        if isinstance(sub_array[-2], int) and sub_array[-1] in ['+', '-', '/', '*']:
+                            # All conditions are met, break out of the inner loop
+                            break
+                        else:
+                            # If found but conditions are not met, add to missing_tuples
+                            missing_tuples.add(item)
+                            break
+                    else:
+                        # If it has only one tuple, check only the integer condition
+                        if len(sub_array) == 1:
+                            missing_tuples.add(item)
+                            break    
+
+                        if isinstance(sub_array[-2], int):
+                            # All conditions are met, break out of the inner loop
+                            break
+                        else:
+                            # If found but conditions are not met, add to missing_tuples
+                            missing_tuples.add(item)
+                            break
+            
+            if not found:
+                # If not found, add it to the missing_tuples set
+                missing_tuples.add(item)
+        
+        # If there are missing tuples, return False and the missing tuples
+        if missing_tuples:
+            return False, list(missing_tuples)
+        
+        # If all tuples are found with the required conditions, return True
+        return True
+
+
+    def removeGroup(self, group):
+        target_group = self.findGroup(group)
+        for item in self.solver_group:
+            if item == group:
+                self.solver_group.remove(group)
+            elif target_group == item:
+                self.solver_group.remove(target_group)
+                
     def getGroupOp(self,target_group):
         for group in self.solver_group:
             print("groups: ",group)
@@ -365,7 +426,7 @@ class KenAiSolver:
             for num in range(1, size + 1):
                 if is_safe(board, row, col, num):
                     board[row][col] = num
-                    self.draw_update(board)
+                    # self.draw_update(board)
                     if is_valid(board, groups):
                         result = backjumping(board, groups, next_row, next_col, conflicts)
                         if result:
@@ -384,26 +445,26 @@ class KenAiSolver:
         return solution
 
         
-if __name__ == "__main__":
-    puzzle = [
-        [(1, 0), (0, 0), 3, '*'],
-        [(2, 0), 2,''],
-        [(0,1), (0,2), 3, '+'],
-        [(1, 1), (2, 1), 3, '/'],
-        [(1, 2), 2, ''],
-        [(2, 2), 3, ''],
+# if __name__ == "__main__":
+#     puzzle = [
+#         [(1, 0), (0, 0), 3, '*'],
+#         [(2, 0), 2,''],
+#         [(0,1), (0,2), 3, '+'],
+#         [(1, 1), (2, 1), 3, '/'],
+#         [(1, 2), 2, ''],
+#         [(2, 2), 3, ''],
 
-    ]
-    def draw_update(board):
-        for row in board:
-            print(row)
-        print()
+#     ]
+#     def draw_update(board):
+#         for row in board:
+#             print(row)
+#         print()
 
-    solver = KenAiSolver(puzzle, draw_update)
-    solution = solver.solve_kenken(3)
-    print("Solution:")
-    for row in solution:
-        print(row)
+#     solver = KenAiSolver(puzzle, draw_update)
+#     solution = solver.solve_kenken(3)
+#     print("Solution:")
+#     for row in solution:
+#         print(row)
 
     # solver = KenPuzzleMaker(6)
     # solver.updateOp("*/")
