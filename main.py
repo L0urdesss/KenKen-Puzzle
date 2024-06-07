@@ -429,7 +429,7 @@ def select_difficulty(grid_size, operation):
 
 
 
-def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , groups):
+def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , groups, cells_left):
 
     for i in range(grid_size):
         for j in range(grid_size):
@@ -449,6 +449,13 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
                     x, y = coordinate 
                     if (i, j) == (x, y):
                         cell_color = (235, 64, 52)
+
+            if cells_left:
+                for coordinate in cells_left:
+                    x, y = coordinate 
+                    if (i, j) == (x, y):
+                        cell_color = BLUE
+
 
 
             pygame.draw.rect(screen, cell_color, cell_rect)
@@ -471,6 +478,12 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
                 color = (255,248,220)
                 if cells == selected_group:
                     color = (155,205,126)
+
+                if cells_left:
+                    for coordinate in cells_left:
+                        x, y = coordinate 
+                        if (i, j) == (x, y):
+                            color = BLUE
 
                 # Draw horizontal line
                 if i < grid_size - 1 and (i + 1, j) in cells:
@@ -495,6 +508,7 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
                 )
 
                 screen.blit(text_surface, text_rect)
+
 
 
 
@@ -580,13 +594,14 @@ def start_solver(grid_size):
     target_group = []
     ken_solver = KenPuzzleMaker(grid_size)
     ken_solver.generate_empty_board()
-
+    cells_left = []
     def init():
-        nonlocal move_history, selected_group, target_group, ken_solver
+        nonlocal move_history, selected_group, target_group, ken_solver, game_board
         move_history = []
         selected_group = None
         target_group = []
         ken_solver = KenPuzzleMaker(grid_size)
+        game_board = [[0] * grid_size for _ in range(grid_size)]
 
     def is_valid(selected_cell, target_group, grid_size):
         for group in ken_solver.solver_group:
@@ -626,7 +641,7 @@ def start_solver(grid_size):
     
     while True:
         screen.blit(backgroundselect, (0, 0))
-        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , ken_solver.solver_group)
+        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , ken_solver.solver_group, cells_left)
 
         for button in control_buttons:
             button.changeColor(pygame.mouse.get_pos())
@@ -642,6 +657,7 @@ def start_solver(grid_size):
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
+                cells_left = []
                 if event.button == 1: # Left click
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
@@ -667,8 +683,12 @@ def start_solver(grid_size):
                         if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
                             init()
                         if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
-                            game_board = solution_board
+                            result , cells_left = ken_solver.check_tuples_in_group(grid_size,ken_solver.solver_group)
+                            print("result: ",result)
+                            print("cell left: ",cells_left)
+                            if result:
+                                solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
+                                game_board = solution_board
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
                             toggle_music()
@@ -715,6 +735,9 @@ def start_solver(grid_size):
                         if BACK_BUTTON.rect.collidepoint(event.pos):
                             press_sound.play()
                             main_menu()
+                        if ERASE_BUTTON.checkForInput((mouse_x, mouse_y)):
+                            if selected_group:
+                                ken_solver.removeGroup(selected_group)
                         if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             press_sound.play()
                             controls()
@@ -754,15 +777,15 @@ def start_solver(grid_size):
                 if event.key == pygame.K_RETURN:
                     if target_group:
                         ken_solver.add_group(target_group)
+                        print("solver: ",ken_solver.solver_group)
                         print("SAVED")
                         target_group = []
 def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board, target_group, selected_group):
     def draw_update(game_board):
         # This function updates the display with the current board state
-        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group, puzzle)
+        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group, puzzle, [])
         pygame.display.update()
         # time.sleep(0.2)  # Adjust the delay as needed to visualize the steps
-
 
     # Initial drawing of the puzzle
     draw_update(game_board)
@@ -771,7 +794,7 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
     solution_board = ken_ai.solve_kenken(grid_size)
     
     return solution_board
-
+    
 def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks):
     for i in range(grid_size):
         for j in range(grid_size):
@@ -897,9 +920,13 @@ def start_game(grid_size, operation, difficulty):
     RESET_BUTTON = Button(image=reset_img,
                           pos=(button_x + 3 * button_x_spacing - 280, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    PLAY_AGAIN_BUTTON = Button(image=new_game_img,
+                          pos=(screen_width // 2, screen_height // 2),
+                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
     CONTROLS_BUTTON = Button(image=controls_img, pos=(
         screen.get_width() - back_img.get_width() + 55, 690),
                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
@@ -957,9 +984,9 @@ def start_game(grid_size, operation, difficulty):
     pencil_mode = False
     pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
    # pencil_marks = [[set(range(1, grid_size + 1)) for _ in range(grid_size)] for _ in range(grid_size)]
-
+    solve= False
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks
+        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve
         move_history = []
         selected_cell = None
         start_time = time.time()
@@ -967,13 +994,13 @@ def start_game(grid_size, operation, difficulty):
         available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
         pencil_mode = False
         pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
-
+        solve = False
+        
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
     while True:
         screen.blit(backgroundselect, (0, 0))
-        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups,
-                       board_answer, pencil_marks)
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks)
 
         # Render control buttons
         for button in control_buttons:
@@ -985,8 +1012,9 @@ def start_game(grid_size, operation, difficulty):
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
 
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
+        # Calculate elapsed 
+        if not solve:
+            elapsed_time = time.time() - start_time
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
 
@@ -1004,6 +1032,9 @@ def start_game(grid_size, operation, difficulty):
         difficulty_text = difficulty_font.render(difficulty, True, (255, 248, 220))
         difficulty_text_rect = difficulty_text.get_rect(center=(screen_width / 2, 60))
         screen.blit(difficulty_text, difficulty_text_rect)
+
+        if solve:
+            PLAY_AGAIN_BUTTON.update(screen)
 
         pygame.display.update()
 
@@ -1078,6 +1109,7 @@ def start_game(grid_size, operation, difficulty):
                                     if random_cell == (j, i):
                                         game_board[i][j] = board_answer[i][j]
                         selected_cell = None
+                        print("board: ",game_board)
                     if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if move_history:
                             last_move = move_history.pop()
@@ -1100,12 +1132,18 @@ def start_game(grid_size, operation, difficulty):
                         toggle_music()
                     if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
                         pencil_mode = not pencil_mode
+                    if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
+                        board_answer, groups = generate_board(grid_size, operation)
+                        game_board = [row[:] for row in initial_board]
+                        init()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                     if selected_cell:
                         previous_value = game_board[selected_cell[1]][selected_cell[0]]
                         move_history.append((selected_cell, previous_value))
                         game_board[selected_cell[1]][selected_cell[0]] = 0
+            if game_board == board_answer:
+                solve = True
 
 
 
@@ -1356,6 +1394,6 @@ def solve_puzzle():
 
 
 
-play_intro_video()
+# play_intro_video()
 toggle_music()  # Call toggle_music() before displaying the main menu
 main_menu()
