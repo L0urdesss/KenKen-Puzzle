@@ -531,7 +531,6 @@ def start_solver(grid_size):
     button_y_start = 100  # Initial y position for the first button
     button_x_spacing = 100  # Spacing between the control buttons
 
-
     # Load images for numbers 0-9
     num_images = [pygame.image.load(f'resources/{i}.png') for i in range(10)]
 
@@ -558,24 +557,30 @@ def start_solver(grid_size):
     DIVIDE_BUTTON = Button(image=division_img,
                            pos=(button_x + 3 * button_x_spacing - 390, button_y_start + 80),
                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
     ERASE_BUTTON = Button(image=solver_erase_img,
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+
     CONTROLS_BUTTON = Button(image=controls_img, pos=(
     screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-    if music_playing:
-        MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
-                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
-    else:
-        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
-                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+    # Define the MUSIC_BUTTON based on the initial music state
+    def get_music_button():
+        if music_playing:
+            return Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                          text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+        else:
+            return Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                          text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
-    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON,MUSIC_BUTTON]
+    MUSIC_BUTTON = get_music_button()
+
+    control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON, MUSIC_BUTTON]
     num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
     button_y_start = 350  # Adjust this value as needed
     num_buttons = []
@@ -607,41 +612,36 @@ def start_solver(grid_size):
         for group in ken_solver.solver_group:
             if selected_cell in group:
                 print("in group")
-
                 return False
-            
+
         if not target_group:
             return True
-        
 
-        
         x, y = selected_cell
-    
         adjacent_positions = [
-            (x-1, y),  # Above
-            (x+1, y),  # Below
-            (x, y-1),  # Left
-            (x, y+1),   # Right
+            (x - 1, y),  # Above
+            (x + 1, y),  # Below
+            (x, y - 1),  # Left
+            (x, y + 1),  # Right
             (x, y)
-
         ]
-        
+
         valid_adjacent_positions = [
             (i, j) for i, j in adjacent_positions
             if 0 <= i < grid_size and 0 <= j < grid_size
         ]
-        
+
         for cell in target_group:
             if cell in valid_adjacent_positions:
                 return True
-            
-        print("False in main")
 
+        print("False in main")
         return False
-    
+
     while True:
         screen.blit(backgroundselect, (0, 0))
-        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,target_group, selected_group , ken_solver.solver_group, cells_left)
+        draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group,
+                         ken_solver.solver_group, cells_left)
 
         for button in control_buttons:
             button.changeColor(pygame.mouse.get_pos())
@@ -650,6 +650,7 @@ def start_solver(grid_size):
         for button in num_buttons:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
+
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -658,15 +659,15 @@ def start_solver(grid_size):
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 cells_left = []
-                if event.button == 1: # Left click
+                if event.button == 1:  # Left click
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
                         cell_x = (mouse_x - grid_x) // cell_size
                         cell_y = (mouse_y - grid_y) // cell_size
                         selected_cell = (cell_y, cell_x)
-                        print("selected cell: ",selected_cell)
+                        print("selected cell: ", selected_cell)
                         selected_group = ken_solver.find_group_coordinates(selected_cell)
-                        print("Selected group: ",selected_group)
+                        print("Selected group: ", selected_group)
                         current_sum = 0
                     else:
                         for i, button in enumerate(num_buttons):
@@ -677,21 +678,25 @@ def start_solver(grid_size):
                                     print(current_sum)
                                     curr_group = ken_solver.findGroup(selected_group)
                                     curr_op = ken_solver.getGroupOp(curr_group)
-                                    print("curr_group: ",curr_group)
-                                    print("curop: ",curr_op)
-                                    ken_solver.update_group(selected_group,current_sum,curr_op)
+                                    print("curr_group: ", curr_group)
+                                    print("curop: ", curr_op)
+                                    ken_solver.update_group(selected_group, current_sum, curr_op)
                         if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
                             init()
                         if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
-                            result , cells_left = ken_solver.check_tuples_in_group(grid_size,ken_solver.solver_group)
-                            print("result: ",result)
-                            print("cell left: ",cells_left)
+                            result, cells_left = ken_solver.check_tuples_in_group(grid_size, ken_solver.solver_group)
+                            print("result: ", result)
+                            print("cell left: ", cells_left)
                             if result:
-                                solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
+                                solution_board = solve_game(ken_solver.solver_group, grid_size, screen, cell_size,
+                                                            grid_x, grid_y, game_board, target_group, selected_group)
                                 game_board = solution_board
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
                             toggle_music()
+                            # Update MUSIC_BUTTON based on the new music state
+                            MUSIC_BUTTON = get_music_button()
+                            control_buttons[-1] = MUSIC_BUTTON  # Update the button in the control_buttons list
                         if PLUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked1")
                             if selected_group:
@@ -699,9 +704,9 @@ def start_solver(grid_size):
                                 print(op_clicked)
                                 curr_group = ken_solver.findGroup(selected_group)
                                 total = ken_solver.getGroupTotal(curr_group)
-                                print("curr_group: ",curr_group)
-                                print("total: ",total)
-                                ken_solver.update_group(selected_group,total,op_clicked)
+                                print("curr_group: ", curr_group)
+                                print("total: ", total)
+                                ken_solver.update_group(selected_group, total, op_clicked)
                         if MINUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked2")
                             if selected_group:
@@ -709,9 +714,9 @@ def start_solver(grid_size):
                                 print(op_clicked)
                                 curr_group = ken_solver.findGroup(selected_group)
                                 total = ken_solver.getGroupTotal(curr_group)
-                                print("curr_group: ",curr_group)
-                                print("total: ",total)
-                                ken_solver.update_group(selected_group,total,op_clicked)                        
+                                print("curr_group: ", curr_group)
+                                print("total: ", total)
+                                ken_solver.update_group(selected_group, total, op_clicked)
                         if TIMES_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked3")
                             if selected_group:
@@ -719,9 +724,9 @@ def start_solver(grid_size):
                                 print(op_clicked)
                                 curr_group = ken_solver.findGroup(selected_group)
                                 total = ken_solver.getGroupTotal(curr_group)
-                                print("curr_group: ",curr_group)
-                                print("total: ",total)
-                                ken_solver.update_group(selected_group,total,op_clicked)
+                                print("curr_group: ", curr_group)
+                                print("total: ", total)
+                                ken_solver.update_group(selected_group, total, op_clicked)
                         if DIVIDE_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked4")
                             if selected_group:
@@ -729,9 +734,9 @@ def start_solver(grid_size):
                                 print(op_clicked)
                                 curr_group = ken_solver.findGroup(selected_group)
                                 total = ken_solver.getGroupTotal(curr_group)
-                                print("curr_group: ",curr_group)
-                                print("total: ",total)
-                                ken_solver.update_group(selected_group,total,op_clicked)
+                                print("curr_group: ", curr_group)
+                                print("total: ", total)
+                                ken_solver.update_group(selected_group, total, op_clicked)
                         if BACK_BUTTON.rect.collidepoint(event.pos):
                             press_sound.play()
                             main_menu()
@@ -741,32 +746,30 @@ def start_solver(grid_size):
                         if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             press_sound.play()
                             controls()
-
                 elif event.button == 3:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
-                    if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height :
+                    if grid_x <= mouse_x < grid_x + grid_width and grid_y <= mouse_y < grid_y + grid_height:
                         cell_x = (mouse_x - grid_x) // cell_size
                         cell_y = (mouse_y - grid_y) // cell_size
                         selected_cell = (cell_y, cell_x)
                         if target_group:
-                            if not is_valid(selected_cell,target_group,grid_size):
+                            if not is_valid(selected_cell, target_group, grid_size):
                                 print("False here")
                                 selected_cell = None
                             else:
                                 if selected_cell in target_group:
                                     target_group.remove(selected_cell)
                                 else:
-                                    print("solvergroup: ",ken_solver.solver_group)
-                                    target_group.append(selected_cell)       
+                                    print("solvergroup: ", ken_solver.solver_group)
+                                    target_group.append(selected_cell)
                         else:
-                            if not is_valid(selected_cell,target_group,grid_size):
+                            if not is_valid(selected_cell, target_group, grid_size):
                                 selected_cell = None
                             else:
                                 if selected_cell in target_group:
                                     target_group.remove(selected_cell)
                                 else:
-                                    target_group.append(selected_cell)      
-
+                                    target_group.append(selected_cell)
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
@@ -777,7 +780,7 @@ def start_solver(grid_size):
                 if event.key == pygame.K_RETURN:
                     if target_group:
                         ken_solver.add_group(target_group)
-                        print("solver: ",ken_solver.solver_group)
+                        print("solver: ", ken_solver.solver_group)
                         print("SAVED")
                         target_group = []
 def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board, target_group, selected_group):
@@ -935,7 +938,7 @@ def start_game(grid_size, operation, difficulty):
         MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
     else:
-        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 620),
+        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
@@ -1000,7 +1003,8 @@ def start_game(grid_size, operation, difficulty):
     board_answer, groups = generate_board(grid_size, operation)
     while True:
         screen.blit(backgroundselect, (0, 0))
-        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks)
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups,
+                       board_answer, pencil_marks)
 
         # Render control buttons
         for button in control_buttons:
@@ -1012,7 +1016,7 @@ def start_game(grid_size, operation, difficulty):
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
 
-        # Calculate elapsed 
+        # Calculate elapsed time
         if not solve:
             elapsed_time = time.time() - start_time
         minutes = int(elapsed_time // 60)
@@ -1061,7 +1065,8 @@ def start_game(grid_size, operation, difficulty):
                                     previous_value = game_board[selected_cell[1]][selected_cell[0]]
                                     move_history.append((selected_cell, previous_value))
                                     game_board[selected_cell[1]][selected_cell[0]] = i + 1
-                                    if (game_board[selected_cell[1]][selected_cell[0]] == board_answer[selected_cell[1]][selected_cell[0]]):
+                                    if (game_board[selected_cell[1]][selected_cell[0]] ==
+                                            board_answer[selected_cell[1]][selected_cell[0]]):
                                         print("correct")
                                         value = i + 1
 
@@ -1109,7 +1114,7 @@ def start_game(grid_size, operation, difficulty):
                                     if random_cell == (j, i):
                                         game_board[i][j] = board_answer[i][j]
                         selected_cell = None
-                        print("board: ",game_board)
+                        print("board: ", game_board)
                     if UNDO_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if move_history:
                             last_move = move_history.pop()
@@ -1130,6 +1135,18 @@ def start_game(grid_size, operation, difficulty):
                     if MUSIC_BUTTON.checkForInput((mouse_x, mouse_y)):
                         press_sound.play()
                         toggle_music()
+                        # Update the MUSIC_BUTTON image based on the new state of music_playing
+                        if music_playing:
+                            MUSIC_BUTTON = Button(image=music_img,
+                                                  pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                                                  text_input="", font=get_font(68, 1), base_color="#D32735",
+                                                  hovering_color=(255, 0, 0))
+                        else:
+                            MUSIC_BUTTON = Button(image=mute_img,
+                                                  pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                                                  text_input="", font=get_font(68, 1), base_color="#D32735",
+                                                  hovering_color=(255, 0, 0))
+                        control_buttons[-1] = MUSIC_BUTTON  # Update the list of control buttons
                     if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
                         pencil_mode = not pencil_mode
                     if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
@@ -1144,7 +1161,6 @@ def start_game(grid_size, operation, difficulty):
                         game_board[selected_cell[1]][selected_cell[0]] = 0
             if game_board == board_answer:
                 solve = True
-
 
 
 def generate_board(grid_size,operation):
