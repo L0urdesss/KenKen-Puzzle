@@ -567,15 +567,19 @@ def start_solver(grid_size):
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     CONTROLS_BUTTON = Button(image=controls_img, pos=(
-    screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
+        screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-    if music_playing:
-        MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
-                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
-    else:
-        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
-                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+    # Define the MUSIC_BUTTON based on the initial music state
+    def get_music_button():
+        if music_playing:
+            return Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                          text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+        else:
+            return Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                          text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+
+    MUSIC_BUTTON = get_music_button()
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON,MUSIC_BUTTON]
     num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
@@ -702,6 +706,9 @@ def start_solver(grid_size):
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
                             toggle_music()
+                            # Update MUSIC_BUTTON based on the new music state
+                            MUSIC_BUTTON = get_music_button()
+                            control_buttons[-1] = MUSIC_BUTTON  # Update the button in the control_buttons list
                         if PLUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked1")
                             if selected_group:
@@ -947,11 +954,11 @@ def start_game(grid_size, operation, difficulty):
         MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
     else:
-        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 620),
+        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
-                       PENCIL_BUTTON,CONTROLS_BUTTON,MUSIC_BUTTON]
+                       PENCIL_BUTTON, CONTROLS_BUTTON, MUSIC_BUTTON]
 
     num_buttons_start_y = button_y_start + 6 * button_spacing
     button_y_start = 350
@@ -1180,6 +1187,18 @@ def start_game(grid_size, operation, difficulty):
                     if MUSIC_BUTTON.checkForInput((mouse_x, mouse_y)):
                         press_sound.play()
                         toggle_music()
+                        # Update the MUSIC_BUTTON image based on the new state of music_playing
+                        if music_playing:
+                            MUSIC_BUTTON = Button(image=music_img,
+                                                  pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                                                  text_input="", font=get_font(68, 1), base_color="#D32735",
+                                                  hovering_color=(255, 0, 0))
+                        else:
+                            MUSIC_BUTTON = Button(image=mute_img,
+                                                  pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                                                  text_input="", font=get_font(68, 1), base_color="#D32735",
+                                                  hovering_color=(255, 0, 0))
+                        control_buttons[-1] = MUSIC_BUTTON  # Update the list of control buttons
                     if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
                         pencil_mode = not pencil_mode
                     if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
