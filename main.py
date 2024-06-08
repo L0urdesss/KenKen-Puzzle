@@ -10,6 +10,7 @@ from button import Button
 import random
 import pygame.mixer
 import cv2
+from PIL import Image
 
 # Initialize pygame and mixer
 pygame.init()
@@ -30,6 +31,8 @@ screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Load images
+no_solution = pygame.image.load("resources/nosolution.png")
+play_again = pygame.image.load("resources/play_again.png")
 background = pygame.image.load('resources/bgmenu.png')
 backgroundselect = pygame.image.load('resources/selectbg.png')
 grid_3x3_image = pygame.image.load("resources/3x3.png")
@@ -66,6 +69,7 @@ hard_img = pygame.image.load('resources/hard.png')
 
 
 # Scale the 3x3 image
+play_again = pygame.transform.scale(play_again, (190, 90))
 grid_3x3_image = pygame.transform.scale(grid_3x3_image, (280, 280))  # Adjust the size as per your requirement
 grid_4x4_image = pygame.transform.scale(grid_4x4_image, (280, 280))
 grid_6x6_image = pygame.transform.scale(grid_6x6_image, (280, 280))
@@ -561,9 +565,9 @@ def start_solver(grid_size):
     ERASE_BUTTON = Button(image=solver_erase_img,
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    PLAY_AGAIN_BUTTON = Button(image=new_game_img,
-                          pos=(screen_width // 2, screen_height // 2),
-                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    PLAY_AGAIN_BUTTON = Button(image=play_again,
+                          pos=(screen_width // 2, screen_height // 2 +80),
+                          text_input="Try Again", font=get_font(24, 3), base_color="#DC6B19", hovering_color=H_BLUE)
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     CONTROLS_BUTTON = Button(image=controls_img, pos=(
@@ -660,6 +664,7 @@ def start_solver(grid_size):
             button.update(screen)
 
         if wrong:
+            screen.blit(no_solution, (0, 0))
             PLAY_AGAIN_BUTTON.update(screen)
         pygame.display.update()
 
@@ -812,8 +817,8 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
     ken_ai = KenAiSolver(puzzle, draw_update)
     solution_board = ken_ai.solve_kenken(grid_size)
 
-    return False
-    
+    return solution_board
+
 def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks):
     for i in range(grid_size):
         for j in range(grid_size):
@@ -939,9 +944,14 @@ def start_game(grid_size, operation, difficulty):
     RESET_BUTTON = Button(image=reset_img,
                           pos=(button_x + 3 * button_x_spacing - 280, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    PLAY_AGAIN_BUTTON = Button(image=new_game_img,
-                          pos=(screen_width // 2, screen_height // 2),
-                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    PLAY_AGAIN_BUTTON = Button(
+        image=play_again,
+        pos=(button_x -490, button_y_start + 500),
+        text_input="Play Again",
+        font=get_font(30, 3),
+        base_color="#dc6b19",
+        hovering_color=H_BLUE
+    )
 
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
@@ -1017,7 +1027,34 @@ def start_game(grid_size, operation, difficulty):
         
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
-    
+
+    def load_gif_frames(file_path, scale_factor=1):
+        gif = Image.open(file_path)
+        frames = []
+        for frame in range(gif.n_frames):
+            gif.seek(frame)
+            frame_image = gif.convert("RGBA")
+            mode = frame_image.mode
+            size = frame_image.size
+            data = frame_image.tobytes()
+            pygame_image = pygame.image.fromstring(data, size, mode)
+
+            # Scale the image
+            scaled_size = (int(size[0] * scale_factor), int(size[1] * scale_factor))
+            pygame_image = pygame.transform.scale(pygame_image, scaled_size)
+
+            frames.append(pygame_image)
+        return frames
+
+    # Load the GIF frames
+    gif_frames = load_gif_frames('resources/win.gif')
+
+    # Frame management
+    current_frame = 0
+    frame_count = len(gif_frames)
+    frame_delay = 100  # Delay in milliseconds between frames
+    last_update_time = pygame.time.get_ticks()
+
     def transfer_values(board_answer, difficulty):
         # Determine grid size
         grid_size = len(board_answer)
@@ -1088,6 +1125,26 @@ def start_game(grid_size, operation, difficulty):
         screen.blit(difficulty_text, difficulty_text_rect)
 
         if solve:
+            current_time = pygame.time.get_ticks()
+            if current_time - last_update_time > frame_delay:
+                current_frame = (current_frame + 1) % frame_count
+                last_update_time = current_time
+
+            gif_width, gif_height = gif_frames[current_frame].get_size()
+            gif_x = (screen_width - gif_width) // 2
+            gif_y = (screen_height - gif_height) // 2
+            screen.blit(gif_frames[current_frame], (gif_x, gif_y))
+            font = get_font(130, 3)
+            difficulty_text = font.render(f" {difficulty}", True, (220,107,25))
+            difficulty_text_rect = difficulty_text.get_rect(center=(screen_width // 2-14, screen_height // 2 - 100))
+            screen.blit(difficulty_text, difficulty_text_rect)
+
+            # Render elapsed time
+            font = get_font(50, 3)
+            time_text = font.render(f" {minutes:02}:{seconds:02}", True, (220,107,25))
+            time_text_rect = time_text.get_rect(center=(screen_width // 2-13, screen_height // 2 + 55))
+            screen.blit(time_text, time_text_rect)
+            # Draw the "Play Again" button after blitting the GIF frames
             PLAY_AGAIN_BUTTON.update(screen)
 
         pygame.display.update()
@@ -1332,21 +1389,26 @@ def main():
         pygame.display.update()
         clock.tick(30)  # Control the frame rate
 
+
 music_playing = False
+music_started = False
+
 
 def toggle_music():
-    global music_playing
+    global music_playing, music_started
     pygame.init()
     pygame.mixer.init()
+
     if not music_playing:
-        pygame.mixer.music.load("resources/BG MUSIC.mp3")
-        pygame.mixer.music.set_volume(0.25)  # Set volume to 50%
-        pygame.mixer.music.play(-1)
-    else:
-        if pygame.mixer.music.get_busy():
-            pygame.mixer.music.pause()
+        if not music_started:
+            pygame.mixer.music.load("resources/BG MUSIC.mp3")
+            pygame.mixer.music.set_volume(0.25)  # Set volume to 25%
+            pygame.mixer.music.play(-1)
+            music_started = True
         else:
             pygame.mixer.music.unpause()
+    else:
+        pygame.mixer.music.pause()
 
     music_playing = not music_playing
 
