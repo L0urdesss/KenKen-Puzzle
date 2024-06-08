@@ -299,7 +299,7 @@ class KenPuzzleMaker:
             return False, list(missing_tuples)
         
         # If all tuples are found with the required conditions, return True
-        return True
+        return True, []
 
 
     def removeGroup(self, group):
@@ -403,45 +403,43 @@ class KenAiSolver:
                     return False
             return True
 
-        def update_conflicts(conflicts, var, cause):
-            conflicts[var] = cause
-
-        def determine_conflict_var(conflicts, current_var):
-            row, col = current_var
-            if col > 0:
-                return (row, col - 1)
-            if row > 0:
-                return (row - 1, size - 1)
-            return None
-
-        def backjumping(board, groups, row, col, conflicts):
+        def algorithm(board, groups, row, col):
             if row == size:
-                return board
+                return board, None
 
             next_row, next_col = (row, col + 1) if col + 1 < size else (row + 1, 0)
 
             if board[row][col] != 0:
-                return backjumping(board, groups, next_row, next_col, conflicts)
+                return algorithm(board, groups, next_row, next_col)
 
             for num in range(1, size + 1):
                 if is_safe(board, row, col, num):
                     board[row][col] = num
                     # self.draw_update(board)
                     if is_valid(board, groups):
-                        result = backjumping(board, groups, next_row, next_col, conflicts)
+                        result, conflict_var = algorithm(board, groups, next_row, next_col)
                         if result:
-                            return result
+                            return result, None
                     board[row][col] = 0
                     # self.draw_update(board)
-            
-            conflict_var = (row, col)
-            update_conflicts(conflicts, conflict_var, determine_conflict_var(conflicts, conflict_var))
+
+            # If no valid number can be placed, backjump to the most recent conflict variable
+            return None, (row, col)
+
+        def backjump(board, groups, row, col):
+            conflict_row, conflict_col = row, col
+            while conflict_row is not None and conflict_col is not None:
+                result, conflict_var = algorithm(board, groups, conflict_row, conflict_col)
+                if result:
+                    return result
+                if conflict_var is None:
+                    break
+                conflict_row, conflict_col = conflict_var
             return None
 
         groups = parse_input(self.puzzle)
         board = [[0] * size for _ in range(size)]
-        conflicts = {}
-        solution = backjumping(board, groups, 0, 0, conflicts)
+        solution = backjump(board, groups, 0, 0)
         return solution
 
         
