@@ -423,18 +423,17 @@ class KenAiSolver:
                     board[row][col] = 0
                     # self.draw_update(board)
 
-            # If no valid number can be placed, backjump to the most recent conflict variable
+            # If no valid number can be placed, return the current cell as a conflict
             return None, (row, col)
 
         def backjump(board, groups, row, col):
-            conflict_row, conflict_col = row, col
-            while conflict_row is not None and conflict_col is not None:
-                result, conflict_var = algorithm(board, groups, conflict_row, conflict_col)
+            while row is not None and col is not None:
+                result, conflict_var = algorithm(board, groups, row, col)
                 if result:
                     return result
-                if conflict_var is None:
+                if conflict_var == (0, 0):  # If the conflict is the first cell, no solution exists
                     break
-                conflict_row, conflict_col = conflict_var
+                row, col = conflict_var
             return None
 
         groups = parse_input(self.puzzle)
@@ -443,7 +442,25 @@ class KenAiSolver:
         return solution
 
         
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    puzzle = [
+    # Example puzzle input format
+    [(0, 0), (0, 1), 3, '+'],
+    [(0, 2), (1, 2), 2, '/'],
+    [(1, 0), (2, 0), (2, 1), 6, '*'],
+    [(1, 1), 2, ''],
+    [(2, 2), 1, '']
+    ]
+    solver = KenAiSolver(puzzle, [])
+    size = 3
+    solution = solver.solve_kenken(size)
+
+    if solution:
+        print("Solved KenKen:")
+        for row in solution:
+            print(" ".join(str(cell) for cell in row))
+    else:
+        print("No solution found.")
 #     puzzle = [
 #         [(1, 0), (0, 0), 3, '*'],
 #         [(2, 0), 2,''],

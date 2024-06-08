@@ -561,7 +561,9 @@ def start_solver(grid_size):
     ERASE_BUTTON = Button(image=solver_erase_img,
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-
+    PLAY_AGAIN_BUTTON = Button(image=new_game_img,
+                          pos=(screen_width // 2, screen_height // 2),
+                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     CONTROLS_BUTTON = Button(image=controls_img, pos=(
@@ -595,13 +597,15 @@ def start_solver(grid_size):
     ken_solver = KenPuzzleMaker(grid_size)
     ken_solver.generate_empty_board()
     cells_left = []
+    wrong = False
     def init():
-        nonlocal move_history, selected_group, target_group, ken_solver, game_board
+        nonlocal move_history, selected_group, target_group, ken_solver, game_board, wrong
         move_history = []
         selected_group = None
         target_group = []
         ken_solver = KenPuzzleMaker(grid_size)
         game_board = [[0] * grid_size for _ in range(grid_size)]
+        wrong = False
 
     def is_valid(selected_cell, target_group, grid_size):
         for group in ken_solver.solver_group:
@@ -650,6 +654,9 @@ def start_solver(grid_size):
         for button in num_buttons:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
+
+        if wrong:
+            PLAY_AGAIN_BUTTON.update(screen)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -688,7 +695,10 @@ def start_solver(grid_size):
                             print("cell left: ",cells_left)
                             if result:
                                 solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
-                                game_board = solution_board
+                                if solution_board:
+                                    game_board = solution_board
+                                else:
+                                    wrong = True
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
                             toggle_music()
@@ -702,6 +712,8 @@ def start_solver(grid_size):
                                 print("curr_group: ",curr_group)
                                 print("total: ",total)
                                 ken_solver.update_group(selected_group,total,op_clicked)
+                        if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and wrong:
+                            init()
                         if MINUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked2")
                             if selected_group:
@@ -785,15 +797,15 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
         # This function updates the display with the current board state
         draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group, puzzle, [])
         pygame.display.update()
-        # time.sleep(0.2)  # Adjust the delay as needed to visualize the steps
+        time.sleep(0.3)  # Adjust the delay as needed to visualize the steps
 
     # Initial drawing of the puzzle
     draw_update(game_board)
     
     ken_ai = KenAiSolver(puzzle, draw_update)
     solution_board = ken_ai.solve_kenken(grid_size)
-    
-    return solution_board
+
+    return False
     
 def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks):
     for i in range(grid_size):
@@ -998,6 +1010,41 @@ def start_game(grid_size, operation, difficulty):
         
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
+    
+    def transfer_values(board_answer, difficulty):
+        # Determine grid size
+        grid_size = len(board_answer)
+        total_cells = grid_size * grid_size
+
+        # Determine number of cells to fill based on difficulty
+        if difficulty == "EASY":
+            num_cells_to_fill = total_cells * 50 // 100
+        elif difficulty == "MEDIUM":
+            num_cells_to_fill = total_cells * 25 // 100
+        else:
+            num_cells_to_fill = 0
+        # Create the game board with zeros
+        game_board = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
+
+        # Get a list of all cell positions
+        all_cells = [(i, j) for i in range(grid_size) for j in range(grid_size)]
+
+        # Randomly select the cells to fill
+        selected_cells = random.sample(all_cells, num_cells_to_fill)
+
+        # Shuffle the selected cells to randomize the positions
+        random.shuffle(selected_cells)
+
+        # Transfer the values from board_answer to game_board in random positions
+        for (i, j) in selected_cells:
+            game_board[i][j] = board_answer[i][j]
+
+        return game_board
+    print("difficulty: ",difficulty)
+    if difficulty == "EASY" or "MEDIUM":
+        print("inside")
+        game_board = transfer_values(board_answer,difficulty)
+    
     while True:
         screen.blit(backgroundselect, (0, 0))
         draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks)
@@ -1124,6 +1171,9 @@ def start_game(grid_size, operation, difficulty):
                             previous_value = game_board[selected_cell[1]][selected_cell[0]]
                             move_history.append((selected_cell, previous_value))
                             game_board[selected_cell[1]][selected_cell[0]] = 0
+                            print("pencil: ",pencil_marks)
+                            pencil_marks[selected_cell[1]][selected_cell[0]].clear()
+
                     if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
                         press_sound.play()
                         controls()
