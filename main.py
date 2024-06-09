@@ -32,6 +32,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Load images
 no_solution = pygame.image.load("resources/nosolution.png")
+button_panel = pygame.image.load("resources/button_panel.png")
 play_again = pygame.image.load("resources/play_again.png")
 background = pygame.image.load('resources/bgmenu.png')
 backgroundselect = pygame.image.load('resources/selectbg.png')
@@ -69,7 +70,8 @@ hard_img = pygame.image.load('resources/hard.png')
 
 
 # Scale the 3x3 image
-play_again = pygame.transform.scale(play_again, (190, 90))
+button_panel =  pygame.transform.scale(button_panel, (200, 90))
+play_again = pygame.transform.scale(play_again, (100, 50))
 grid_3x3_image = pygame.transform.scale(grid_3x3_image, (280, 280))  # Adjust the size as per your requirement
 grid_4x4_image = pygame.transform.scale(grid_4x4_image, (280, 280))
 grid_6x6_image = pygame.transform.scale(grid_6x6_image, (280, 280))
@@ -566,7 +568,7 @@ def start_solver(grid_size):
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     PLAY_AGAIN_BUTTON = Button(image=play_again,
-                          pos=(screen_width // 2, screen_height // 2 +80),
+                          pos=(screen_width // 2, screen_height // 2 +40),
                           text_input="Try Again", font=get_font(24, 3), base_color="#DC6B19", hovering_color=H_BLUE)
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
@@ -710,7 +712,7 @@ def start_solver(grid_size):
                                     wrong = True
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
-                            toggle_music()
+                            toggle_music("resources/BG MUSIC.mp3")
                             # Update MUSIC_BUTTON based on the new music state
                             MUSIC_BUTTON = get_music_button()
                             control_buttons[-1] = MUSIC_BUTTON  # Update the button in the control_buttons list
@@ -927,9 +929,12 @@ def start_game(grid_size, operation, difficulty):
                              text_input="", font=get_font(24, 1),
                              base_color=BLUE, hovering_color=H_BLUE)
 
-    SOLVE_BUTTON = Button(image=solve_img, pos=(button_x - 150, button_y_start + 520),
-                          text_input="",
-                          font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    SOLVE_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 360, button_y_start + 520),
+                          text_input="Hint",
+                          font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
+    SUBMIT_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 140, button_y_start + 520),
+                          text_input="Submit",
+                          font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
 
     PENCIL_BUTTON = Button(image=pencil_img,
                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
@@ -946,9 +951,9 @@ def start_game(grid_size, operation, difficulty):
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     PLAY_AGAIN_BUTTON = Button(
         image=play_again,
-        pos=(button_x -490, button_y_start + 500),
+        pos=(button_x -490, button_y_start + 470),
         text_input="Play Again",
-        font=get_font(30, 3),
+        font=get_font(20, 3),
         base_color="#dc6b19",
         hovering_color=H_BLUE
     )
@@ -968,7 +973,7 @@ def start_game(grid_size, operation, difficulty):
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
-                       PENCIL_BUTTON, CONTROLS_BUTTON, MUSIC_BUTTON]
+                       PENCIL_BUTTON, CONTROLS_BUTTON, MUSIC_BUTTON, SUBMIT_BUTTON]
 
     num_buttons_start_y = button_y_start + 6 * button_spacing
     button_y_start = 350
@@ -1028,7 +1033,7 @@ def start_game(grid_size, operation, difficulty):
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
 
-    def load_gif_frames(file_path, scale_factor=1):
+    def load_gif_frames(file_path, scale_factor=0.7):
         gif = Image.open(file_path)
         frames = []
         for frame in range(gif.n_frames):
@@ -1119,7 +1124,7 @@ def start_game(grid_size, operation, difficulty):
         screen.blit(timer_text, timer_text_rect)
 
         # Render difficulty text
-        difficulty_font = get_font(70, 3)
+        difficulty_font = get_font(60, 3)
         difficulty_text = difficulty_font.render(difficulty, True, (255, 248, 220))
         difficulty_text_rect = difficulty_text.get_rect(center=(screen_width / 2, 60))
         screen.blit(difficulty_text, difficulty_text_rect)
@@ -1134,15 +1139,15 @@ def start_game(grid_size, operation, difficulty):
             gif_x = (screen_width - gif_width) // 2
             gif_y = (screen_height - gif_height) // 2
             screen.blit(gif_frames[current_frame], (gif_x, gif_y))
-            font = get_font(130, 3)
+            font = get_font(80, 3)
             difficulty_text = font.render(f" {difficulty}", True, (220,107,25))
-            difficulty_text_rect = difficulty_text.get_rect(center=(screen_width // 2-14, screen_height // 2 - 100))
+            difficulty_text_rect = difficulty_text.get_rect(center=(screen_width // 2-14, screen_height // 2 - 70))
             screen.blit(difficulty_text, difficulty_text_rect)
 
             # Render elapsed time
-            font = get_font(50, 3)
+            font = get_font(40, 3)
             time_text = font.render(f" {minutes:02}:{seconds:02}", True, (220,107,25))
-            time_text_rect = time_text.get_rect(center=(screen_width // 2-13, screen_height // 2 + 55))
+            time_text_rect = time_text.get_rect(center=(screen_width // 2-13, screen_height // 2 + 45))
             screen.blit(time_text, time_text_rect)
             # Draw the "Play Again" button after blitting the GIF frames
             PLAY_AGAIN_BUTTON.update(screen)
@@ -1401,8 +1406,8 @@ def toggle_music():
 
     if not music_playing:
         if not music_started:
-            pygame.mixer.music.load("resources/BG MUSIC.mp3")
-            pygame.mixer.music.set_volume(0.25)  # Set volume to 25%
+            pygame.mixer.music.load("resources/home.mp3")
+            pygame.mixer.music.set_volume(0.50)  # Set volume to 25%
             pygame.mixer.music.play(-1)
             music_started = True
         else:
@@ -1411,6 +1416,7 @@ def toggle_music():
         pygame.mixer.music.pause()
 
     music_playing = not music_playing
+
 
 def main_menu():
     # Initialize pygame
@@ -1524,7 +1530,6 @@ def solve_puzzle():
         pygame.display.flip()
 
 
-
-# play_intro_video()
+#play_intro_video()
 toggle_music()  # Call toggle_music() before displaying the main menu
 main_menu()
