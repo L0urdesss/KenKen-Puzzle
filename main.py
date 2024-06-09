@@ -933,7 +933,7 @@ def start_game(grid_size, operation, difficulty):
                           text_input="Hint",
                           font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
     SUBMIT_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 140, button_y_start + 520),
-                          text_input="Submit",
+                          text_input="Check",
                           font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
 
     PENCIL_BUTTON = Button(image=pencil_img,
