@@ -57,6 +57,7 @@ controls_img = pygame.image.load('resources/tips.png')
 exit_border = pygame.image.load('resources/border1.png')
 start_border = pygame.image.load('resources/border2.png')
 pencil_img = pygame.image.load('resources/pencil.png')
+pencil_toggle = pygame.image.load('resources/pencil_toggle.png')
 plus_img = pygame.image.load('resources/plus.png')
 minus_img = pygame.image.load('resources/minus.png')
 multiplication_img = pygame.image.load('resources/multiplication.png')
@@ -87,6 +88,7 @@ undo_img = pygame.transform.scale(undo_img, (70, 70))
 reset_img = pygame.transform.scale(reset_img, (70, 70))
 erase_img = pygame.transform.scale(erase_img, (70, 70))
 pencil_img = pygame.transform.scale(pencil_img, (70, 70))
+pencil_toggle = pygame.transform.scale(pencil_toggle, (70, 70))
 playgame_img = pygame.transform.scale(playgame_img, (400, 400))
 solver_img = pygame.transform.scale(solver_img, (400, 400))
 home_img = pygame.transform.scale(home_img, (200, 100))
@@ -821,7 +823,7 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
 
     return solution_board
 
-def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks):
+def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks, check):
     for i in range(grid_size):
         for j in range(grid_size):
             cell_x = grid_x + j * cell_size
@@ -838,9 +840,12 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
                 # print("value: ",cell_value)
                 # print("answer: ",cell_answer)
                 if cell_value == cell_answer:
-                    cell_color = (155,205,126)
+                    cell_color = (255,248,220)  
+                    if check:
+                        cell_color = (155,205,126)
                 else:
-                    cell_color = (235, 64, 52)
+                    if check:
+                        cell_color = (235, 64, 52)
 
             pygame.draw.rect(screen, cell_color, cell_rect)
 
@@ -873,7 +878,7 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
             if game_board[i][j]:
                 if game_board[i][j] != board_answer[i][j]:
                     color = (235, 64, 52)
-                else:
+                elif check:
                     color = (155,205,126)
 
 
@@ -932,13 +937,14 @@ def start_game(grid_size, operation, difficulty):
     SOLVE_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 360, button_y_start + 520),
                           text_input="Hint",
                           font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
-    SUBMIT_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 140, button_y_start + 520),
+    CHECK_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 140, button_y_start + 520),
                           text_input="Check",
                           font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
 
     PENCIL_BUTTON = Button(image=pencil_img,
                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    
     ERASE_BUTTON = Button(image=erase_img,
                           pos=(button_x + button_x_spacing - 300, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
@@ -973,7 +979,18 @@ def start_game(grid_size, operation, difficulty):
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
-                       PENCIL_BUTTON, CONTROLS_BUTTON, MUSIC_BUTTON, SUBMIT_BUTTON]
+                       PENCIL_BUTTON, CONTROLS_BUTTON, MUSIC_BUTTON, CHECK_BUTTON]
+
+    def get_pencil_button(pencil):
+        print("pencil inside: ",pencil)
+        if pencil:
+            return Button(image=pencil_toggle,
+                           pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
+                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+        else:
+            return Button(image=pencil_img,
+                           pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
+                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
 
     num_buttons_start_y = button_y_start + 6 * button_spacing
     button_y_start = 350
@@ -1017,10 +1034,11 @@ def start_game(grid_size, operation, difficulty):
     available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
     pencil_mode = False
     pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
+    check = False
    # pencil_marks = [[set(range(1, grid_size + 1)) for _ in range(grid_size)] for _ in range(grid_size)]
     solve= False
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve
+        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve, check
         move_history = []
         selected_cell = None
         start_time = time.time()
@@ -1029,7 +1047,8 @@ def start_game(grid_size, operation, difficulty):
         pencil_mode = False
         pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
         solve = False
-        
+        check = False
+
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
 
@@ -1096,7 +1115,7 @@ def start_game(grid_size, operation, difficulty):
     
     while True:
         screen.blit(backgroundselect, (0, 0))
-        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks)
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks, check)
 
         # Render control buttons
         for button in control_buttons:
@@ -1205,10 +1224,13 @@ def start_game(grid_size, operation, difficulty):
                                             for x in range(sub_grid_x, sub_grid_x + sub_grid_width):
                                                 if value in pencil_marks[y][x]:
                                                     pencil_marks[y][x].remove(value)
+
                     if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
                         board_answer, groups = generate_board(grid_size, operation)
                         game_board = [row[:] for row in initial_board]
                         init()
+                    if CHECK_BUTTON.checkForInput((mouse_x, mouse_y)):
+                        check = not check
                     if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if selected_cell:
                             for i in range(grid_size):
@@ -1263,6 +1285,10 @@ def start_game(grid_size, operation, difficulty):
                         control_buttons[-1] = MUSIC_BUTTON  # Update the list of control buttons
                     if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
                         pencil_mode = not pencil_mode
+                        print("pencil: ",pencil_mode)
+                        buttons = get_pencil_button(pencil_mode)
+                        control_buttons[-3] = buttons  # Update the button in the control_buttons list
+                        
                     if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
                         board_answer, groups = generate_board(grid_size, operation)
                         game_board = [row[:] for row in initial_board]
