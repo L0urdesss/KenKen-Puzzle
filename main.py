@@ -833,8 +833,7 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
             cell_answer = board_answer[i][j]
 
             cell_color = (255,248,220)  
-            if selected_cell and (j, i) == selected_cell:
-                cell_color = (247, 197, 102) 
+
 
             if cell_value != 0:
                 # print("value: ",cell_value)
@@ -846,7 +845,8 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
                 else:
                     if check:
                         cell_color = (235, 64, 52)
-
+            if selected_cell and (j, i) == selected_cell:
+                cell_color = (247, 197, 102) 
             pygame.draw.rect(screen, cell_color, cell_rect)
 
             # Render cell border
@@ -877,8 +877,9 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
                 color = (247, 197, 102) 
             if game_board[i][j]:
                 if game_board[i][j] != board_answer[i][j]:
-                    color = (235, 64, 52)
-                elif check:
+                    if check and (j, i) != selected_cell:
+                        color = (235, 64, 52)
+                elif check and (j, i) != selected_cell:
                     color = (155,205,126)
 
 
@@ -1038,7 +1039,7 @@ def start_game(grid_size, operation, difficulty):
    # pencil_marks = [[set(range(1, grid_size + 1)) for _ in range(grid_size)] for _ in range(grid_size)]
     solve= False
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve, check
+        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve, check, game_board, difficulty
         move_history = []
         selected_cell = None
         start_time = time.time()
@@ -1048,6 +1049,9 @@ def start_game(grid_size, operation, difficulty):
         pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
         solve = False
         check = False
+        if difficulty == "EASY" or "MEDIUM":
+            print("inside")
+            game_board = transfer_values(board_answer,difficulty)
 
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
@@ -1287,7 +1291,7 @@ def start_game(grid_size, operation, difficulty):
                         pencil_mode = not pencil_mode
                         print("pencil: ",pencil_mode)
                         buttons = get_pencil_button(pencil_mode)
-                        control_buttons[-3] = buttons  # Update the button in the control_buttons list
+                        control_buttons[-3] = buttons  # Update the button in the control_buttons 
                         
                     if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
                         board_answer, groups = generate_board(grid_size, operation)
