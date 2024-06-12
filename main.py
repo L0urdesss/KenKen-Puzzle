@@ -714,7 +714,7 @@ def start_solver(grid_size):
                                     wrong = True
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
-                            toggle_music("resources/BG MUSIC.mp3")
+                            toggle_music()
                             # Update MUSIC_BUTTON based on the new music state
                             MUSIC_BUTTON = get_music_button()
                             control_buttons[-1] = MUSIC_BUTTON  # Update the button in the control_buttons list
@@ -945,7 +945,7 @@ def start_game(grid_size, operation, difficulty):
     PENCIL_BUTTON = Button(image=pencil_img,
                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    
+
     ERASE_BUTTON = Button(image=erase_img,
                           pos=(button_x + button_x_spacing - 300, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
