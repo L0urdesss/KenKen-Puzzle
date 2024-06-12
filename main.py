@@ -506,6 +506,8 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
             if len(extra_elements) >= 2 and isinstance(extra_elements[-2], int):
                 sum_value = extra_elements[-2]
                 text_op = extra_elements[-1]
+                if text_op == '*':
+                    text_op = 'x'
                 sum_text = str(sum_value)
                 combined_text = sum_text + text_op
                 font = pygame.font.Font(None, 36)
@@ -895,6 +897,8 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
         if not isinstance(group[-1], tuple):
             sum_value = group[-1]
             text_op = group[-2]
+            if text_op == '*':
+                text_op = 'x'
             sum_text = str(sum_value)
             combined_text = sum_text + text_op
             font = get_font(30, 3)
@@ -942,10 +946,14 @@ def start_game(grid_size, operation, difficulty):
                           text_input="Check",
                           font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
 
-    PENCIL_BUTTON = Button(image=pencil_img,
+    PENCIL_OFF_BUTTON = Button(image=pencil_img,
                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     
+    PENCIL_ON_BUTTON = Button(image=pencil_toggle,
+                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
+                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+                        
     ERASE_BUTTON = Button(image=erase_img,
                           pos=(button_x + button_x_spacing - 300, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
@@ -980,18 +988,7 @@ def start_game(grid_size, operation, difficulty):
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
-                       PENCIL_BUTTON, CONTROLS_BUTTON, MUSIC_BUTTON, CHECK_BUTTON]
-
-    def get_pencil_button(pencil):
-        print("pencil inside: ",pencil)
-        if pencil:
-            return Button(image=pencil_toggle,
-                           pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
-                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-        else:
-            return Button(image=pencil_img,
-                           pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
-                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+                       CONTROLS_BUTTON, CHECK_BUTTON,MUSIC_BUTTON]
 
     num_buttons_start_y = button_y_start + 6 * button_spacing
     button_y_start = 350
@@ -1136,6 +1133,11 @@ def start_game(grid_size, operation, difficulty):
             elapsed_time = time.time() - start_time
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
+
+        if pencil_mode:
+            PENCIL_ON_BUTTON.update(screen)
+        else:
+            PENCIL_OFF_BUTTON.update(screen)
 
         # Render timer text
         font = get_font(45, 3)
@@ -1287,11 +1289,9 @@ def start_game(grid_size, operation, difficulty):
                                                   text_input="", font=get_font(68, 1), base_color="#D32735",
                                                   hovering_color=(255, 0, 0))
                         control_buttons[-1] = MUSIC_BUTTON  # Update the list of control buttons
-                    if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
+                    if PENCIL_ON_BUTTON.checkForInput((mouse_x, mouse_y)) or PENCIL_OFF_BUTTON.checkForInput((mouse_x, mouse_y)):
                         pencil_mode = not pencil_mode
                         print("pencil: ",pencil_mode)
-                        buttons = get_pencil_button(pencil_mode)
-                        control_buttons[-3] = buttons  # Update the button in the control_buttons 
                         
                     if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
                         board_answer, groups = generate_board(grid_size, operation)
