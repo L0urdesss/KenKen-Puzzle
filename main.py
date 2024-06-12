@@ -716,7 +716,7 @@ def start_solver(grid_size):
                                     wrong = True
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
-                            toggle_music("resources/BG MUSIC.mp3")
+                            toggle_music()
                             # Update MUSIC_BUTTON based on the new music state
                             MUSIC_BUTTON = get_music_button()
                             control_buttons[-1] = MUSIC_BUTTON  # Update the button in the control_buttons list
