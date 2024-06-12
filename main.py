@@ -34,6 +34,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 no_solution = pygame.image.load("resources/nosolution.png")
 button_panel = pygame.image.load("resources/button_panel.png")
 play_again = pygame.image.load("resources/play_again.png")
+try_again = pygame.image.load("resources/tryagain.png")
 background = pygame.image.load('resources/bgmenu.png')
 backgroundselect = pygame.image.load('resources/selectbg.png')
 grid_3x3_image = pygame.image.load("resources/3x3.png")
@@ -73,6 +74,7 @@ hard_img = pygame.image.load('resources/hard.png')
 # Scale the 3x3 image
 button_panel =  pygame.transform.scale(button_panel, (200, 90))
 play_again = pygame.transform.scale(play_again, (100, 50))
+try_again = pygame.transform.scale(try_again, (130, 50))
 grid_3x3_image = pygame.transform.scale(grid_3x3_image, (280, 280))  # Adjust the size as per your requirement
 grid_4x4_image = pygame.transform.scale(grid_4x4_image, (280, 280))
 grid_6x6_image = pygame.transform.scale(grid_6x6_image, (280, 280))
@@ -571,7 +573,7 @@ def start_solver(grid_size):
     ERASE_BUTTON = Button(image=solver_erase_img,
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    PLAY_AGAIN_BUTTON = Button(image=play_again,
+    PLAY_AGAIN_BUTTON = Button(image=try_again,
                           pos=(screen_width // 2, screen_height // 2 +65),
                           text_input="Try Again", font=get_font(24, 3), base_color="#DC6B19", hovering_color=H_BLUE)
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
