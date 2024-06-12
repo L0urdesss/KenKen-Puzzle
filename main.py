@@ -572,7 +572,7 @@ def start_solver(grid_size):
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     PLAY_AGAIN_BUTTON = Button(image=play_again,
-                          pos=(screen_width // 2, screen_height // 2 +40),
+                          pos=(screen_width // 2, screen_height // 2 +65),
                           text_input="Try Again", font=get_font(24, 3), base_color="#DC6B19", hovering_color=H_BLUE)
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
