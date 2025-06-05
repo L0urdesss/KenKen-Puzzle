@@ -299,7 +299,7 @@ class KenPuzzleMaker:
             return False, list(missing_tuples)
         
         # If all tuples are found with the required conditions, return True
-        return True
+        return True, []
 
 
     def removeGroup(self, group):
@@ -403,49 +403,64 @@ class KenAiSolver:
                     return False
             return True
 
-        def update_conflicts(conflicts, var, cause):
-            conflicts[var] = cause
-
-        def determine_conflict_var(conflicts, current_var):
-            row, col = current_var
-            if col > 0:
-                return (row, col - 1)
-            if row > 0:
-                return (row - 1, size - 1)
-            return None
-
-        def backjumping(board, groups, row, col, conflicts):
+        def algorithm(board, groups, row, col):
             if row == size:
-                return board
+                return board, None
 
             next_row, next_col = (row, col + 1) if col + 1 < size else (row + 1, 0)
 
             if board[row][col] != 0:
-                return backjumping(board, groups, next_row, next_col, conflicts)
+                return algorithm(board, groups, next_row, next_col)
 
             for num in range(1, size + 1):
                 if is_safe(board, row, col, num):
                     board[row][col] = num
                     # self.draw_update(board)
                     if is_valid(board, groups):
-                        result = backjumping(board, groups, next_row, next_col, conflicts)
+                        result, conflict_var = algorithm(board, groups, next_row, next_col)
                         if result:
-                            return result
+                            return result, None
                     board[row][col] = 0
                     # self.draw_update(board)
-            
-            conflict_var = (row, col)
-            update_conflicts(conflicts, conflict_var, determine_conflict_var(conflicts, conflict_var))
+
+            # If no valid number can be placed, return the current cell as a conflict
+            return None, (row, col)
+
+        def backjump(board, groups, row, col):
+            while row is not None and col is not None:
+                result, conflict_var = algorithm(board, groups, row, col)
+                if result:
+                    return result
+                if conflict_var == (0, 0):  # If the conflict is the first cell, no solution exists
+                    break
+                row, col = conflict_var
             return None
 
         groups = parse_input(self.puzzle)
         board = [[0] * size for _ in range(size)]
-        conflicts = {}
-        solution = backjumping(board, groups, 0, 0, conflicts)
+        solution = backjump(board, groups, 0, 0)
         return solution
 
         
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    puzzle = [
+    # Example puzzle input format
+    [(0, 0), (0, 1), 3, '+'],
+    [(0, 2), (1, 2), 2, '/'],
+    [(1, 0), (2, 0), (2, 1), 6, '*'],
+    [(1, 1), 2, ''],
+    [(2, 2), 1, '']
+    ]
+    solver = KenAiSolver(puzzle, [])
+    size = 3
+    solution = solver.solve_kenken(size)
+
+    if solution:
+        print("Solved KenKen:")
+        for row in solution:
+            print(" ".join(str(cell) for cell in row))
+    else:
+        print("No solution found.")
 #     puzzle = [
 #         [(1, 0), (0, 0), 3, '*'],
 #         [(2, 0), 2,''],

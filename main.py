@@ -10,6 +10,7 @@ from button import Button
 import random
 import pygame.mixer
 import cv2
+from PIL import Image
 
 # Initialize pygame and mixer
 pygame.init()
@@ -30,6 +31,10 @@ screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Load images
+no_solution = pygame.image.load("resources/nosolution.png")
+button_panel = pygame.image.load("resources/button_panel.png")
+play_again = pygame.image.load("resources/play_again.png")
+try_again = pygame.image.load("resources/tryagain.png")
 background = pygame.image.load('resources/bgmenu.png')
 backgroundselect = pygame.image.load('resources/selectbg.png')
 grid_3x3_image = pygame.image.load("resources/3x3.png")
@@ -53,6 +58,7 @@ controls_img = pygame.image.load('resources/tips.png')
 exit_border = pygame.image.load('resources/border1.png')
 start_border = pygame.image.load('resources/border2.png')
 pencil_img = pygame.image.load('resources/pencil.png')
+pencil_toggle = pygame.image.load('resources/pencil_toggle.png')
 plus_img = pygame.image.load('resources/plus.png')
 minus_img = pygame.image.load('resources/minus.png')
 multiplication_img = pygame.image.load('resources/multiplication.png')
@@ -66,6 +72,9 @@ hard_img = pygame.image.load('resources/hard.png')
 
 
 # Scale the 3x3 image
+button_panel =  pygame.transform.scale(button_panel, (200, 90))
+play_again = pygame.transform.scale(play_again, (100, 50))
+try_again = pygame.transform.scale(try_again, (130, 50))
 grid_3x3_image = pygame.transform.scale(grid_3x3_image, (280, 280))  # Adjust the size as per your requirement
 grid_4x4_image = pygame.transform.scale(grid_4x4_image, (280, 280))
 grid_6x6_image = pygame.transform.scale(grid_6x6_image, (280, 280))
@@ -81,6 +90,7 @@ undo_img = pygame.transform.scale(undo_img, (70, 70))
 reset_img = pygame.transform.scale(reset_img, (70, 70))
 erase_img = pygame.transform.scale(erase_img, (70, 70))
 pencil_img = pygame.transform.scale(pencil_img, (70, 70))
+pencil_toggle = pygame.transform.scale(pencil_toggle, (70, 70))
 playgame_img = pygame.transform.scale(playgame_img, (400, 400))
 solver_img = pygame.transform.scale(solver_img, (400, 400))
 home_img = pygame.transform.scale(home_img, (200, 100))
@@ -498,6 +508,8 @@ def draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board,ta
             if len(extra_elements) >= 2 and isinstance(extra_elements[-2], int):
                 sum_value = extra_elements[-2]
                 text_op = extra_elements[-1]
+                if text_op == '*':
+                    text_op = 'x'
                 sum_text = str(sum_value)
                 combined_text = sum_text + text_op
                 font = pygame.font.Font(None, 36)
@@ -561,19 +573,25 @@ def start_solver(grid_size):
     ERASE_BUTTON = Button(image=solver_erase_img,
                           pos=(button_x + 4 * button_x_spacing - 380, button_y_start + 80),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-
+    PLAY_AGAIN_BUTTON = Button(image=try_again,
+                          pos=(screen_width // 2, screen_height // 2 +65),
+                          text_input="Try Again", font=get_font(24, 3), base_color="#DC6B19", hovering_color=H_BLUE)
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
     CONTROLS_BUTTON = Button(image=controls_img, pos=(
-    screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
+        screen.get_width() - controls_img.get_width() - 5, screen.get_height() - controls_img.get_height() - 5),
                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=RED)
 
-    if music_playing:
-        MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
-                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
-    else:
-        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
-                              text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+    # Define the MUSIC_BUTTON based on the initial music state
+    def get_music_button():
+        if music_playing:
+            return Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                          text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+        else:
+            return Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 25, 620),
+                          text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
+
+    MUSIC_BUTTON = get_music_button()
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, PLUS_BUTTON, MINUS_BUTTON, TIMES_BUTTON, BACK_BUTTON, DIVIDE_BUTTON, CONTROLS_BUTTON, ERASE_BUTTON,MUSIC_BUTTON]
     num_buttons_start_y = button_y_start + 5 * button_y_start + button_spacing
@@ -595,13 +613,15 @@ def start_solver(grid_size):
     ken_solver = KenPuzzleMaker(grid_size)
     ken_solver.generate_empty_board()
     cells_left = []
+    wrong = False
     def init():
-        nonlocal move_history, selected_group, target_group, ken_solver, game_board
+        nonlocal move_history, selected_group, target_group, ken_solver, game_board, wrong
         move_history = []
         selected_group = None
         target_group = []
         ken_solver = KenPuzzleMaker(grid_size)
         game_board = [[0] * grid_size for _ in range(grid_size)]
+        wrong = False
 
     def is_valid(selected_cell, target_group, grid_size):
         for group in ken_solver.solver_group:
@@ -650,6 +670,10 @@ def start_solver(grid_size):
         for button in num_buttons:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
+
+        if wrong:
+            screen.blit(no_solution, (0, 0))
+            PLAY_AGAIN_BUTTON.update(screen)
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -688,10 +712,16 @@ def start_solver(grid_size):
                             print("cell left: ",cells_left)
                             if result:
                                 solution_board = solve_game(ken_solver.solver_group,grid_size,screen,cell_size, grid_x, grid_y, game_board,target_group, selected_group)
-                                game_board = solution_board
+                                if solution_board:
+                                    game_board = solution_board
+                                else:
+                                    wrong = True
                         if MUSIC_BUTTON.checkForInput(pygame.mouse.get_pos()):
                             press_sound.play()
                             toggle_music()
+                            # Update MUSIC_BUTTON based on the new music state
+                            MUSIC_BUTTON = get_music_button()
+                            control_buttons[-1] = MUSIC_BUTTON  # Update the button in the control_buttons list
                         if PLUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked1")
                             if selected_group:
@@ -702,6 +732,8 @@ def start_solver(grid_size):
                                 print("curr_group: ",curr_group)
                                 print("total: ",total)
                                 ken_solver.update_group(selected_group,total,op_clicked)
+                        if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and wrong:
+                            init()
                         if MINUS_BUTTON.checkForInput((mouse_x, mouse_y)):
                             print("clicked2")
                             if selected_group:
@@ -785,17 +817,17 @@ def solve_game(puzzle, grid_size, screen, cell_size, grid_x, grid_y, game_board,
         # This function updates the display with the current board state
         draw_grid_solver(screen, grid_size, cell_size, grid_x, grid_y, game_board, target_group, selected_group, puzzle, [])
         pygame.display.update()
-        # time.sleep(0.2)  # Adjust the delay as needed to visualize the steps
+        time.sleep(0.3)  # Adjust the delay as needed to visualize the steps
 
     # Initial drawing of the puzzle
     draw_update(game_board)
     
     ken_ai = KenAiSolver(puzzle, draw_update)
     solution_board = ken_ai.solve_kenken(grid_size)
-    
+
     return solution_board
-    
-def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks):
+
+def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation ,groups , board_answer ,pencil_marks, check):
     for i in range(grid_size):
         for j in range(grid_size):
             cell_x = grid_x + j * cell_size
@@ -805,17 +837,20 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
             cell_answer = board_answer[i][j]
 
             cell_color = (255,248,220)  
-            if selected_cell and (j, i) == selected_cell:
-                cell_color = (247, 197, 102) 
+
 
             if cell_value != 0:
                 # print("value: ",cell_value)
                 # print("answer: ",cell_answer)
                 if cell_value == cell_answer:
-                    cell_color = (155,205,126)
+                    cell_color = (255,248,220)  
+                    if check:
+                        cell_color = (155,205,126)
                 else:
-                    cell_color = (235, 64, 52)
-
+                    if check:
+                        cell_color = (235, 64, 52)
+            if selected_cell and (j, i) == selected_cell:
+                cell_color = (247, 197, 102) 
             pygame.draw.rect(screen, cell_color, cell_rect)
 
             # Render cell border
@@ -846,8 +881,9 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
                 color = (247, 197, 102) 
             if game_board[i][j]:
                 if game_board[i][j] != board_answer[i][j]:
-                    color = (235, 64, 52)
-                else:
+                    if check and (j, i) != selected_cell:
+                        color = (235, 64, 52)
+                elif check and (j, i) != selected_cell:
                     color = (155,205,126)
 
 
@@ -863,6 +899,8 @@ def draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, sel
         if not isinstance(group[-1], tuple):
             sum_value = group[-1]
             text_op = group[-2]
+            if text_op == '*':
+                text_op = 'x'
             sum_text = str(sum_value)
             combined_text = sum_text + text_op
             font = get_font(30, 3)
@@ -903,13 +941,21 @@ def start_game(grid_size, operation, difficulty):
                              text_input="", font=get_font(24, 1),
                              base_color=BLUE, hovering_color=H_BLUE)
 
-    SOLVE_BUTTON = Button(image=solve_img, pos=(button_x - 150, button_y_start + 520),
-                          text_input="",
-                          font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    SOLVE_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 360, button_y_start + 520),
+                          text_input="Hint",
+                          font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
+    CHECK_BUTTON = Button(image=button_panel, pos=(button_x + button_x_spacing - 140, button_y_start + 520),
+                          text_input="Check",
+                          font=get_font(40, 3), base_color="#DC6B19", hovering_color="#DC6B19")
 
-    PENCIL_BUTTON = Button(image=pencil_img,
+    PENCIL_OFF_BUTTON = Button(image=pencil_img,
                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
                            text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    
+    PENCIL_ON_BUTTON = Button(image=pencil_toggle,
+                            pos=(button_x - 310, button_y_start + 1 * button_y_start + 200),
+                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+                        
     ERASE_BUTTON = Button(image=erase_img,
                           pos=(button_x + button_x_spacing - 300, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
@@ -920,9 +966,14 @@ def start_game(grid_size, operation, difficulty):
     RESET_BUTTON = Button(image=reset_img,
                           pos=(button_x + 3 * button_x_spacing - 280, button_y_start + 1 * button_y_start + 200),
                           text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
-    PLAY_AGAIN_BUTTON = Button(image=new_game_img,
-                          pos=(screen_width // 2, screen_height // 2),
-                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
+    PLAY_AGAIN_BUTTON = Button(
+        image=play_again,
+        pos=(button_x -490, button_y_start + 470),
+        text_input="Play Again",
+        font=get_font(20, 3),
+        base_color="#dc6b19",
+        hovering_color=H_BLUE
+    )
 
     BACK_BUTTON = Button(image=back_img, pos=(screen_width - back_img.get_width() + 10, 50),
                          text_input="", font=get_font(24, 1), base_color=BLUE, hovering_color=H_BLUE)
@@ -935,11 +986,11 @@ def start_game(grid_size, operation, difficulty):
         MUSIC_BUTTON = Button(image=music_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
     else:
-        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 620),
+        MUSIC_BUTTON = Button(image=mute_img, pos=(screen.get_width() - back_img.get_width() + 55, 640),
                               text_input="", font=get_font(68, 1), base_color="#D32735", hovering_color=(255, 0, 0))
 
     control_buttons = [NEW_GAME_BUTTON, SOLVE_BUTTON, UNDO_BUTTON, RESET_BUTTON, ERASE_BUTTON, BACK_BUTTON,
-                       PENCIL_BUTTON,CONTROLS_BUTTON,MUSIC_BUTTON]
+                       CONTROLS_BUTTON, CHECK_BUTTON,MUSIC_BUTTON]
 
     num_buttons_start_y = button_y_start + 6 * button_spacing
     button_y_start = 350
@@ -983,10 +1034,11 @@ def start_game(grid_size, operation, difficulty):
     available_cells = {(x, y) for x in range(grid_size) for y in range(grid_size)}
     pencil_mode = False
     pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
+    check = False
    # pencil_marks = [[set(range(1, grid_size + 1)) for _ in range(grid_size)] for _ in range(grid_size)]
     solve= False
     def init():
-        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve
+        nonlocal move_history, selected_cell, start_time, elapsed_time, available_cells, pencil_mode, pencil_marks, solve, check, game_board, difficulty
         move_history = []
         selected_cell = None
         start_time = time.time()
@@ -995,12 +1047,78 @@ def start_game(grid_size, operation, difficulty):
         pencil_mode = False
         pencil_marks = [[set() for _ in range(grid_size)] for _ in range(grid_size)]
         solve = False
-        
+        check = False
+        if difficulty == "EASY" or "MEDIUM":
+            print("inside")
+            game_board = transfer_values(board_answer,difficulty)
+
     # Placeholder loop to keep the screen open
     board_answer, groups = generate_board(grid_size, operation)
+
+    def load_gif_frames(file_path, scale_factor=0.7):
+        gif = Image.open(file_path)
+        frames = []
+        for frame in range(gif.n_frames):
+            gif.seek(frame)
+            frame_image = gif.convert("RGBA")
+            mode = frame_image.mode
+            size = frame_image.size
+            data = frame_image.tobytes()
+            pygame_image = pygame.image.fromstring(data, size, mode)
+
+            # Scale the image
+            scaled_size = (int(size[0] * scale_factor), int(size[1] * scale_factor))
+            pygame_image = pygame.transform.scale(pygame_image, scaled_size)
+
+            frames.append(pygame_image)
+        return frames
+
+    # Load the GIF frames
+    gif_frames = load_gif_frames('resources/win.gif')
+
+    # Frame management
+    current_frame = 0
+    frame_count = len(gif_frames)
+    frame_delay = 100  # Delay in milliseconds between frames
+    last_update_time = pygame.time.get_ticks()
+
+    def transfer_values(board_answer, difficulty):
+        # Determine grid size
+        grid_size = len(board_answer)
+        total_cells = grid_size * grid_size
+
+        # Determine number of cells to fill based on difficulty
+        if difficulty == "EASY":
+            num_cells_to_fill = total_cells * 50 // 100
+        elif difficulty == "MEDIUM":
+            num_cells_to_fill = total_cells * 25 // 100
+        else:
+            num_cells_to_fill = 0
+        # Create the game board with zeros
+        game_board = [[0 for _ in range(grid_size)] for _ in range(grid_size)]
+
+        # Get a list of all cell positions
+        all_cells = [(i, j) for i in range(grid_size) for j in range(grid_size)]
+
+        # Randomly select the cells to fill
+        selected_cells = random.sample(all_cells, num_cells_to_fill)
+
+        # Shuffle the selected cells to randomize the positions
+        random.shuffle(selected_cells)
+
+        # Transfer the values from board_answer to game_board in random positions
+        for (i, j) in selected_cells:
+            game_board[i][j] = board_answer[i][j]
+
+        return game_board
+    print("difficulty: ",difficulty)
+    if difficulty == "EASY" or "MEDIUM":
+        print("inside")
+        game_board = transfer_values(board_answer,difficulty)
+    
     while True:
         screen.blit(backgroundselect, (0, 0))
-        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks)
+        draw_grid_play(screen, grid_size, cell_size, grid_x, grid_y, game_board, selected_cell, operation, groups, board_answer, pencil_marks, check)
 
         # Render control buttons
         for button in control_buttons:
@@ -1018,6 +1136,11 @@ def start_game(grid_size, operation, difficulty):
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
 
+        if pencil_mode:
+            PENCIL_ON_BUTTON.update(screen)
+        else:
+            PENCIL_OFF_BUTTON.update(screen)
+
         # Render timer text
         font = get_font(45, 3)
         timer_text = font.render(f"{minutes:02}:{seconds:02}", True, (247, 197, 102))
@@ -1028,12 +1151,32 @@ def start_game(grid_size, operation, difficulty):
         screen.blit(timer_text, timer_text_rect)
 
         # Render difficulty text
-        difficulty_font = get_font(70, 3)
+        difficulty_font = get_font(60, 3)
         difficulty_text = difficulty_font.render(difficulty, True, (255, 248, 220))
         difficulty_text_rect = difficulty_text.get_rect(center=(screen_width / 2, 60))
         screen.blit(difficulty_text, difficulty_text_rect)
 
         if solve:
+            current_time = pygame.time.get_ticks()
+            if current_time - last_update_time > frame_delay:
+                current_frame = (current_frame + 1) % frame_count
+                last_update_time = current_time
+
+            gif_width, gif_height = gif_frames[current_frame].get_size()
+            gif_x = (screen_width - gif_width) // 2
+            gif_y = (screen_height - gif_height) // 2
+            screen.blit(gif_frames[current_frame], (gif_x, gif_y))
+            font = get_font(80, 3)
+            difficulty_text = font.render(f" {difficulty}", True, (220,107,25))
+            difficulty_text_rect = difficulty_text.get_rect(center=(screen_width // 2-14, screen_height // 2 - 70))
+            screen.blit(difficulty_text, difficulty_text_rect)
+
+            # Render elapsed time
+            font = get_font(40, 3)
+            time_text = font.render(f" {minutes:02}:{seconds:02}", True, (220,107,25))
+            time_text_rect = time_text.get_rect(center=(screen_width // 2-13, screen_height // 2 + 45))
+            screen.blit(time_text, time_text_rect)
+            # Draw the "Play Again" button after blitting the GIF frames
             PLAY_AGAIN_BUTTON.update(screen)
 
         pygame.display.update()
@@ -1089,10 +1232,13 @@ def start_game(grid_size, operation, difficulty):
                                             for x in range(sub_grid_x, sub_grid_x + sub_grid_width):
                                                 if value in pencil_marks[y][x]:
                                                     pencil_marks[y][x].remove(value)
+
                     if NEW_GAME_BUTTON.checkForInput((mouse_x, mouse_y)):
                         board_answer, groups = generate_board(grid_size, operation)
                         game_board = [row[:] for row in initial_board]
                         init()
+                    if CHECK_BUTTON.checkForInput((mouse_x, mouse_y)):
+                        check = not check
                     if SOLVE_BUTTON.checkForInput((mouse_x, mouse_y)):
                         if selected_cell:
                             for i in range(grid_size):
@@ -1124,14 +1270,31 @@ def start_game(grid_size, operation, difficulty):
                             previous_value = game_board[selected_cell[1]][selected_cell[0]]
                             move_history.append((selected_cell, previous_value))
                             game_board[selected_cell[1]][selected_cell[0]] = 0
+                            print("pencil: ",pencil_marks)
+                            pencil_marks[selected_cell[1]][selected_cell[0]].clear()
+
                     if CONTROLS_BUTTON.checkForInput((mouse_x, mouse_y)):
                         press_sound.play()
                         controls()
                     if MUSIC_BUTTON.checkForInput((mouse_x, mouse_y)):
                         press_sound.play()
                         toggle_music()
-                    if PENCIL_BUTTON.checkForInput((mouse_x, mouse_y)):
+                        # Update the MUSIC_BUTTON image based on the new state of music_playing
+                        if music_playing:
+                            MUSIC_BUTTON = Button(image=music_img,
+                                                  pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                                                  text_input="", font=get_font(68, 1), base_color="#D32735",
+                                                  hovering_color=(255, 0, 0))
+                        else:
+                            MUSIC_BUTTON = Button(image=mute_img,
+                                                  pos=(screen.get_width() - back_img.get_width() + 55, 640),
+                                                  text_input="", font=get_font(68, 1), base_color="#D32735",
+                                                  hovering_color=(255, 0, 0))
+                        control_buttons[-1] = MUSIC_BUTTON  # Update the list of control buttons
+                    if PENCIL_ON_BUTTON.checkForInput((mouse_x, mouse_y)) or PENCIL_OFF_BUTTON.checkForInput((mouse_x, mouse_y)):
                         pencil_mode = not pencil_mode
+                        print("pencil: ",pencil_mode)
+                        
                     if PLAY_AGAIN_BUTTON.checkForInput((mouse_x, mouse_y)) and solve:
                         board_answer, groups = generate_board(grid_size, operation)
                         game_board = [row[:] for row in initial_board]
@@ -1263,23 +1426,29 @@ def main():
         pygame.display.update()
         clock.tick(30)  # Control the frame rate
 
+
 music_playing = False
+music_started = False
+
 
 def toggle_music():
-    global music_playing
+    global music_playing, music_started
     pygame.init()
     pygame.mixer.init()
+
     if not music_playing:
-        pygame.mixer.music.load("resources/BG MUSIC.mp3")
-        pygame.mixer.music.set_volume(0.25)  # Set volume to 50%
-        pygame.mixer.music.play(-1)
-    else:
-        if pygame.mixer.music.get_busy():
-            pygame.mixer.music.pause()
+        if not music_started:
+            pygame.mixer.music.load("resources/home.mp3")
+            pygame.mixer.music.set_volume(0.50)  # Set volume to 25%
+            pygame.mixer.music.play(-1)
+            music_started = True
         else:
             pygame.mixer.music.unpause()
+    else:
+        pygame.mixer.music.pause()
 
     music_playing = not music_playing
+
 
 def main_menu():
     # Initialize pygame
@@ -1393,7 +1562,6 @@ def solve_puzzle():
         pygame.display.flip()
 
 
-
-# play_intro_video()
+#play_intro_video()
 toggle_music()  # Call toggle_music() before displaying the main menu
 main_menu()
